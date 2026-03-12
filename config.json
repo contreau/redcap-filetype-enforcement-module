@@ -1,0 +1,20 @@
+{
+  "name": "REDCap File Type Enforcement External Module",
+  "description": "Module that enforces configurable file/MIME types for file upload fields in survey instruments.",
+  "namespace": "ExternalModules\\FiletypeEnforcementModule",
+  "framework-version": 12,
+  "authors": [
+    {
+      "name": "Conor Kelley",
+      "email": "conor.kelley@gwu.edu",
+      "institution": "The George Washington University"
+    }
+  ],
+  "project-settings": [
+    {
+      "key": "filetype_selection",
+      "name": "File type selection",
+      "type": "checkbox"
+    }
+  ]
+}
