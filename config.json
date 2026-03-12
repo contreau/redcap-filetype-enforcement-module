@@ -2,7 +2,7 @@
   "name": "REDCap File Type Enforcement External Module",
   "description": "Module that enforces configurable file/MIME types for file upload fields in survey instruments.",
   "namespace": "ExternalModules\\FiletypeEnforcementModule",
-  "framework-version": 12,
+  "framework-version": 16,
   "authors": [
     {
       "name": "Conor Kelley",
@@ -12,8 +12,38 @@
   ],
   "project-settings": [
     {
-      "key": "filetype_selection",
-      "name": "File type selection",
+      "key": "settings_description",
+      "name": "<strong>INSTRUCTIONS:</strong> Check each file type that you would like to make available for your file upload fields. You can then choose among these in the instrument builder.",
+      "type": "descriptive"
+    },
+    {
+      "key": "enable_pdf",
+      "name": "Enable PDF files (.pdf)",
+      "type": "checkbox"
+    },
+    {
+      "key": "enable_word",
+      "name": "Enable Word files (.doc, .docx)",
+      "type": "checkbox"
+    },
+    {
+      "key": "enable_excel",
+      "name": "Enable Excel files (.xls, .xlsx)",
+      "type": "checkbox"
+    },
+    {
+      "key": "enable_csv",
+      "name": "Enable CSV files (.csv)",
+      "type": "checkbox"
+    },
+    {
+      "key": "enable_txt",
+      "name": "Enable Text files (.txt, .text)",
+      "type": "checkbox"
+    },
+    {
+      "key": "enable_image",
+      "name": "Enable Image files (.jpeg, .jpg, .png, .tiff, .tif)",
       "type": "checkbox"
     }
   ]
