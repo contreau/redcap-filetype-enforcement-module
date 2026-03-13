@@ -10,6 +10,7 @@
       "institution": "The George Washington University"
     }
   ],
+  "auth-ajax-actions": ["set_filetype"],
   "project-settings": [
     {
       "key": "settings_description",
