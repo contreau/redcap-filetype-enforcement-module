@@ -26,12 +26,36 @@ class FiletypeEnforcementModule extends AbstractExternalModule
 
                 // Dev convenience function for showing enabled files at a glance
                 $this->showEnabledFiles();
+
+                $this->saveToProjectSettings(); // just a test
             }
         }
     }
 
     // * Handle calls from the JS script here
     public function redcap_module_ajax() {}
+
+    protected function saveToProjectSettings()
+    {
+        $this->setProjectSetting("test", [1, 2, 4], PROJECT_ID);
+        var_dump($this->getProjectSettings(PROJECT_ID));
+
+        // pseudo code for representation of data to be saved
+        $model = [
+            "instrument_1" => [
+                "field_1_name" => "mimetypes",
+                "field_2_name" => "mimetypes"
+            ],
+            "instrument_2" => [
+                "field_1_name" => "mimetypes",
+                "field_2_name" => "mimetypes"
+            ]
+        ];
+
+        var_dump(json_encode($model));
+
+        // * Need to be able to in-place delete a field upon doing so from the UI
+    }
 
     /**
      * Returns the sq_id values for all file fields in the project.
