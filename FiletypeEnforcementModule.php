@@ -6,8 +6,14 @@ use ExternalModules\AbstractExternalModule;
 use ExternalModules\ExternalModules;
 use REDCap;
 
+require_once "default_filetypes.php";
+
 class FiletypeEnforcementModule extends AbstractExternalModule
 {
+    /**
+     * * REDCap HOOKS *
+     */
+
     // * NOTE: This only runs code on instrument builder pages.
     public function redcap_every_page_top()
     {
@@ -21,21 +27,40 @@ class FiletypeEnforcementModule extends AbstractExternalModule
                 // Set the JS Module Object name as a cookie for the JS script to grab
                 $this->initializeJavascriptModuleObject();
                 setcookie("js_module_object", $this->getJavascriptModuleObjectName());
-                $this->includeJs("js/module_object.js");
+                $this->includeJs("js/module_script.js");
 
 
                 // Dev convenience function for showing enabled files at a glance
                 $this->showEnabledFiles();
 
-                $this->saveToProjectSettings(); // just a test
+                $this->saveFileFieldSettings();
             }
         }
     }
 
     // * Handle calls from the JS script here
-    public function redcap_module_ajax() {}
+    public function redcap_module_ajax($action)
+    {
+        if ($action == "get_enabled_filetypes") {
+            $enabled_files = [];
+            foreach ($this->getProjectSettings(PROJECT_ID) as $key => $value) {
+                if (str_contains($key, "enable_") && $value == 1) {
+                    $file_abbrev = explode("enable_", $key)[1];
+                    array_push($enabled_files, DEFAULT_FILETYPES[$file_abbrev]);
+                }
+            }
+            return $enabled_files;
+        }
+    }
 
-    protected function saveToProjectSettings()
+    // * Runs on survey pages after full page render
+    public function redcap_survey_page() {}
+
+    /**
+     * * MODULE METHODS *
+     */
+
+    protected function saveFileFieldSettings()
     {
         $this->setProjectSetting("test", [1, 2, 4], PROJECT_ID);
         var_dump($this->getProjectSettings(PROJECT_ID));
@@ -51,8 +76,6 @@ class FiletypeEnforcementModule extends AbstractExternalModule
                 "field_2_name" => "mimetypes"
             ]
         ];
-
-        var_dump(json_encode($model));
 
         // * Need to be able to in-place delete a field upon doing so from the UI
     }
@@ -87,19 +110,6 @@ class FiletypeEnforcementModule extends AbstractExternalModule
 
     protected function includeJs($file)
     {
-        echo '<script src="' . $this->getUrl($file) . '"></script>';
+        echo '<script type="module" src="' . $this->getUrl($file) . '"></script>';
     }
-
-    protected $mime_types = [
-        "application/pdf" => [".pdf"],
-        "text/csv" => [".csv"],
-        "text/plain" => [".text", ".txt"],
-        "image/jpeg" => [".jpeg", ".jpg"],
-        "image/png" => [".png"],
-        "image/tiff" => [".tiff", ".tif"],
-        "application/msword" => [".doc"],
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document" => [".docx"],
-        "application/vnd.ms-excel" => [".xls"],
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => [".xlsx"],
-    ];
 }

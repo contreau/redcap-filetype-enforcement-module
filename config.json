@@ -10,7 +10,7 @@
       "institution": "The George Washington University"
     }
   ],
-  "auth-ajax-actions": ["set_filetype"],
+  "auth-ajax-actions": ["get_enabled_filetypes", "set_filetype"],
   "project-settings": [
     {
       "key": "settings_description",
@@ -38,13 +38,23 @@
       "type": "checkbox"
     },
     {
-      "key": "enable_txt",
+      "key": "enable_text",
       "name": "Enable Text files (.txt, .text)",
       "type": "checkbox"
     },
     {
-      "key": "enable_image",
-      "name": "Enable Image files (.jpeg, .jpg, .png, .tiff, .tif)",
+      "key": "enable_jpeg",
+      "name": "Enable JPEG image files (.jpeg, .jpg)",
+      "type": "checkbox"
+    },
+    {
+      "key": "enable_png",
+      "name": "Enable PNG Image files (.png)",
+      "type": "checkbox"
+    },
+    {
+      "key": "enable_tiff",
+      "name": "Enable TIFF image files (.tiff, .tif)",
       "type": "checkbox"
     }
   ]
