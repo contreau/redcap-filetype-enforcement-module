@@ -10,7 +10,8 @@
       "institution": "The George Washington University"
     }
   ],
-  "auth-ajax-actions": ["get_enabled_filetypes", "set_filetype"],
+  "auth-ajax-actions": ["get_enabled_filetypes", "set_filefield_settings"],
+  "no-auth-ajax-actions": ["get_filefield_settings"],
   "project-settings": [
     {
       "key": "settings_description",

@@ -32,8 +32,6 @@ class FiletypeEnforcementModule extends AbstractExternalModule
 
                 // Dev convenience function for showing enabled files at a glance
                 $this->showEnabledFiles();
-
-                $this->saveFileFieldSettings();
             }
         }
     }
@@ -41,6 +39,7 @@ class FiletypeEnforcementModule extends AbstractExternalModule
     // * Handle calls from the JS script here
     public function redcap_module_ajax($action)
     {
+        // called in module_script.js
         if ($action == "get_enabled_filetypes") {
             $enabled_files = [];
             foreach ($this->getProjectSettings(PROJECT_ID) as $key => $value) {
@@ -51,10 +50,23 @@ class FiletypeEnforcementModule extends AbstractExternalModule
             }
             return $enabled_files;
         }
+
+        // called in survey_page.js
+        if ($action == "get_filefield_settings") {
+            $filefield_settings = $this->getProjectSetting("filefield_settings", PROJECT_ID);
+            if ($filefield_settings !== null) {
+                return $filefield_settings;
+            }
+        }
     }
 
     // * Runs on survey pages after full page render
-    public function redcap_survey_page() {}
+    public function redcap_survey_page()
+    {
+        $this->initializeJavascriptModuleObject();
+        setcookie("js_module_object_survey", $this->getJavascriptModuleObjectName());
+        $this->includeJs("js/survey_page.js");
+    }
 
     /**
      * * MODULE METHODS *
@@ -62,10 +74,7 @@ class FiletypeEnforcementModule extends AbstractExternalModule
 
     protected function saveFileFieldSettings()
     {
-        $this->setProjectSetting("test", [1, 2, 4], PROJECT_ID);
-        var_dump($this->getProjectSettings(PROJECT_ID));
-
-        // pseudo code for representation of data to be saved
+        // placeholder for now
         $model = [
             "instrument_1" => [
                 "field_1_name" => "mimetypes",
@@ -76,6 +85,8 @@ class FiletypeEnforcementModule extends AbstractExternalModule
                 "field_2_name" => "mimetypes"
             ]
         ];
+
+        $this->setProjectSetting("filefield_settings", $model, PROJECT_ID);
 
         // * Need to be able to in-place delete a field upon doing so from the UI
     }
