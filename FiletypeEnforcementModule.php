@@ -27,7 +27,7 @@ class FiletypeEnforcementModule extends AbstractExternalModule
                 // Set the JS Module Object name as a cookie for the JS script to grab
                 $this->initializeJavascriptModuleObject();
                 setcookie("js_module_object", $this->getJavascriptModuleObjectName());
-                $this->includeJs("js/module_script.js");
+                $this->includeJs("js/editor/instrument_editor.js");
 
 
                 // Dev convenience function for showing enabled files at a glance
@@ -65,7 +65,7 @@ class FiletypeEnforcementModule extends AbstractExternalModule
     {
         $this->initializeJavascriptModuleObject();
         setcookie("js_module_object_survey", $this->getJavascriptModuleObjectName());
-        $this->includeJs("js/survey_page.js");
+        $this->includeJs("js/user/survey_page.js");
     }
 
     /**
