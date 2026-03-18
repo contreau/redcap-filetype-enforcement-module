@@ -1,3 +1,6 @@
+/**
+ * Runs on survey pages (the end user's client).
+ */
 (() => {
   // Retrieve the JS module object name whose value was set as a cookie
   const cookieValue = document.cookie

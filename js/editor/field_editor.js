@@ -1,3 +1,6 @@
+/**
+ * Creates the mutation observer for the field editor dialog in the instrument builder page.
+ */
 export function observeFieldEditor() {
   // onchange callback for the field type <select>, which needs to be removed to prevent multiple assigned event listeners
   const onFieldTypeChange = (e) => {

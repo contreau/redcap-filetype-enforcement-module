@@ -1,6 +1,8 @@
 import { observeFieldEditor } from "./field_editor.js";
 
-// * Module JS as a whole executing in a single IIFE - this should be the final form.
+/**
+ * Runs on the instrument editor page.
+ */
 (() => {
   // Retrieve the JS module object name whose value was set as a cookie
   const cookieValue = document.cookie
