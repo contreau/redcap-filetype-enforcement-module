@@ -1,25 +1,20 @@
 import { observeFieldEditor } from "./field_editor.js";
+import { FiletypeCheckboxesComponent } from "./FiletypeCheckboxesComponent.js";
 
 /**
  * Runs on the instrument editor page.
  */
 (() => {
   // Retrieve the JS module object name whose value was set as a cookie
-  const cookieValue = document.cookie
-    .split(";")
-    .filter((cookie) => cookie.includes("js_module_object"))[0]
-    .split("=")[1];
-  const module = cookieValue.split(".").reduce((acc, key) => acc[key], globalThis);
+  const getModule = () => {
+    const cookieValue = document.cookie
+      .split(";")
+      .filter((cookie) => cookie.includes("js_module_object"))[0]
+      ?.split("=")[1];
 
-  /**
-   * @returns {Promise<Record<string, string[]>[]>}
-   */
-  async function getEnabledFiletypes() {
-    const enabledFiletypes = await module.ajax("get_enabled_filetypes"); // resolves to array
-    console.log(enabledFiletypes);
-    return enabledFiletypes;
-  }
+    if (!cookieValue) throw new Error("js_module_object cookie not found.");
+    return cookieValue.split(".").reduce((acc, key) => acc[key], globalThis);
+  };
 
-  getEnabledFiletypes();
-  observeFieldEditor();
+  observeFieldEditor(FiletypeCheckboxesComponent, getModule());
 })();
