@@ -1,16 +1,17 @@
 export class FiletypeCheckboxesComponent extends HTMLElement {
   static tagName = "filetype-checkboxes";
 
-  constructor(module) {
+  constructor(module, fieldname) {
     super();
     this.module = module;
-    this.enabledFiletypes = null;
+    this.fieldname = fieldname;
   }
 
   #initialized = false;
+  #enabledFiletypes;
 
   async connectedCallback() {
-    console.log("connected.");
+    console.log(`connected (${this.fieldname})`);
     const shadow = this.shadowRoot ?? this.attachShadow({ mode: "open" });
 
     if (!this.#initialized) {
@@ -18,8 +19,8 @@ export class FiletypeCheckboxesComponent extends HTMLElement {
       this.#initialized = true;
 
       // Fetch enabled filetypes for the project
-      this.enabledFiletypes = await this.getEnabledFiletypes(this.module);
-      const checkboxes = this.generateCheckboxes(this.enabledFiletypes);
+      this.#enabledFiletypes = await this.#getEnabledFiletypes(this.module);
+      const checkboxes = this.#generateCheckboxes(this.#enabledFiletypes);
 
       const wc = document.createElement("template");
       wc.innerHTML = `
@@ -62,30 +63,57 @@ export class FiletypeCheckboxesComponent extends HTMLElement {
   }
 
   disconnectedCallback() {
-    console.log("disconnected.");
-  }
-
-  /**
-   * Fetches the filetypes enabled in the module settings.
-   * @returns {Promise<Record<string, string[]>[]>}
-   */
-  async getEnabledFiletypes(module) {
-    // todo: handle possibility of ajax failing, fallback to a sessionStorage value of the enabled filetypes - prob worth caching anyway.
-    const enabledFiletypes = await module.ajax("get_enabled_filetypes"); // resolves to array
-    return enabledFiletypes;
+    console.log(`disconnected (${this.fieldname})`);
   }
 
   /**
    * Generates the checkbox HTML for the filetypes enabled in the module settings.
-   * @param {Promise<Record<string, string[]>[]>} filetypes
+   * @param {Record<string, string[]>[]} filetypes
    * @returns {string}
    */
-  generateCheckboxes(filetypes) {
+  #generateCheckboxes(filetypes) {
     let checkboxesString = ``;
     for (const filetype of filetypes) {
       const name = filetype.display_name.toLowerCase();
       checkboxesString += `<div><input type="checkbox" id="${name}" name="${name}" /><label for="${name}">${filetype.display_name}</label></div>`;
     }
     return checkboxesString;
+  }
+
+  // ** ASYNC METHODS **
+
+  /**
+   * Fetches the filetypes enabled in the module settings.
+   * @returns {Promise<Record<string, string[]>[]>}
+   */
+  async #getEnabledFiletypes(module) {
+    // Todo: handle possibility of ajax failing, fallback to a sessionStorage value of the enabled filetypes - prob worth caching anyway.
+    const enabledFiletypes = await module.ajax("get_enabled_filetypes"); // resolves to array
+    return enabledFiletypes;
+  }
+
+  /**
+   * Saves the checked filetypes in the module settings. Called from field_editor.js
+   * @returns {Record<string, string | string[]>}
+   */
+  async saveEnforcedFiletypes() {
+    const checkedFiletypes = Array.from(this.shadowRoot.querySelectorAll("input[type='checkbox'"))
+      .filter((box) => box.checked)
+      .map((box) => box.id);
+
+    // Todo: Save to module settings
+
+    return {
+      field_name: this.fieldname,
+      enforced_filetypes: checkedFiletypes,
+    };
+  }
+
+  /**
+   * Fetches the filetypes already applied to fields, if they exist.
+   */
+  async #getEnforcedFiletypes(module) {
+    // Todo: after completing saveEnforcedFiletypes and saving data to module settings
+    const enforcedFiletypes = await module.ajax("get_enforced_filetypes");
   }
 }

@@ -31,32 +31,34 @@ class FiletypeEnforcementModule extends AbstractExternalModule
 
 
                 // Dev convenience function for showing enabled files at a glance
-                $this->showEnabledFiles();
+                // $this->showEnabledFiles();
             }
         }
     }
 
-    // * Handle calls from the JS script here
+    // * Handle ajax calls from JS here
     public function redcap_module_ajax($action)
     {
-        // called in module_script.js
-        if ($action == "get_enabled_filetypes") {
-            $enabled_files = [];
-            foreach ($this->getProjectSettings(PROJECT_ID) as $key => $value) {
-                if (str_contains($key, "enable_") && $value == 1) {
-                    $file_abbrev = explode("enable_", $key)[1];
-                    array_push($enabled_files, DEFAULT_FILETYPES[$file_abbrev]);
+        switch ($action) {
+            case "get_enabled_filetypes": // called in FiletypeCheckboxesComponent.js
+                $enabled_files = [];
+                foreach ($this->getProjectSettings(PROJECT_ID) as $key => $value) {
+                    if (str_contains($key, "enable_") && $value == 1) {
+                        $file_abbrev = explode("enable_", $key)[1];
+                        array_push($enabled_files, DEFAULT_FILETYPES[$file_abbrev]);
+                    }
                 }
-            }
-            return $enabled_files;
-        }
+                return $enabled_files;
 
-        // called in survey_page.js
-        if ($action == "get_filefield_settings") {
-            $filefield_settings = $this->getProjectSetting("filefield_settings", PROJECT_ID);
-            if ($filefield_settings !== null) {
-                return $filefield_settings;
-            }
+            case "get_filefield_settings":  // called in survey_page.js
+                $filefield_settings = $this->getProjectSetting("filefield_settings", PROJECT_ID);
+                if ($filefield_settings !== null) {
+                    return $filefield_settings;
+                }
+
+
+            case "set_filefield_settings":
+                // Todo: save the data to config.json!
         }
     }
 

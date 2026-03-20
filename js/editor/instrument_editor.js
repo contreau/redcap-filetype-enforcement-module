@@ -1,4 +1,4 @@
-import { observeFieldEditor } from "./field_editor.js";
+import { observeFieldEditorDialog } from "./field_editor_dialog.js";
 import { FiletypeCheckboxesComponent } from "./FiletypeCheckboxesComponent.js";
 
 /**
@@ -16,5 +16,5 @@ import { FiletypeCheckboxesComponent } from "./FiletypeCheckboxesComponent.js";
     return cookieValue.split(".").reduce((acc, key) => acc[key], globalThis);
   };
 
-  observeFieldEditor(FiletypeCheckboxesComponent, getModule());
+  observeFieldEditorDialog(FiletypeCheckboxesComponent, getModule());
 })();
