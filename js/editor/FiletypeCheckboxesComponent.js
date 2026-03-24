@@ -103,10 +103,15 @@ export class FiletypeCheckboxesComponent extends HTMLElement {
 
     // Todo: Save to module settings
 
-    return {
-      field_name: this.fieldname,
-      enforced_filetypes: checkedFiletypes,
+    const payload = {
+      field_name: this.fieldname, // i.e. file_upload
+      enforced_filetypes: checkedFiletypes, // data
     };
+
+    console.log(payload);
+
+    const response = await this.module.ajax("set_filefield_settings", JSON.stringify(payload));
+    return response;
   }
 
   /**

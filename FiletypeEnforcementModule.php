@@ -23,7 +23,6 @@ class FiletypeEnforcementModule extends AbstractExternalModule
         $instrument_names = array_keys(REDCap::getInstrumentNames());
         foreach ($instrument_names as $name) {
             if ($_GET['page'] == $name && !isset($_GET['s'])) { // the second check here prevents the ensuing code block from running on the live /surveys pages, which have a query parameter of 's'
-                var_dump($this->getProjectFilefieldIds($name));
                 // Set the JS Module Object name as a cookie for the JS script to grab
                 $this->initializeJavascriptModuleObject();
                 setcookie("js_module_object", $this->getJavascriptModuleObjectName());
@@ -31,18 +30,18 @@ class FiletypeEnforcementModule extends AbstractExternalModule
 
 
                 // Dev convenience function for showing enabled files at a glance
-                // $this->showEnabledFiles();
+                $this->showEnabledFiles();
             }
         }
     }
 
     // * Handle ajax calls from JS here
-    public function redcap_module_ajax($action)
+    public function redcap_module_ajax($action, $payload, $project_id, $record, $instrument)
     {
         switch ($action) {
             case "get_enabled_filetypes": // called in FiletypeCheckboxesComponent.js
                 $enabled_files = [];
-                foreach ($this->getProjectSettings(PROJECT_ID) as $key => $value) {
+                foreach ($this->getProjectSettings($project_id) as $key => $value) {
                     if (str_contains($key, "enable_") && $value == 1) {
                         $file_abbrev = explode("enable_", $key)[1];
                         array_push($enabled_files, DEFAULT_FILETYPES[$file_abbrev]);
@@ -51,14 +50,17 @@ class FiletypeEnforcementModule extends AbstractExternalModule
                 return $enabled_files;
 
             case "get_filefield_settings":  // called in survey_page.js
-                $filefield_settings = $this->getProjectSetting("filefield_settings", PROJECT_ID);
+                $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id);
                 if ($filefield_settings !== null) {
                     return $filefield_settings;
                 }
 
 
             case "set_filefield_settings":
-                // Todo: save the data to config.json!
+                $data = json_decode($payload, true);
+                $field_name = $data['field_name'];
+                $filetypes = $data['enforced_filetypes'];
+                return json_encode($this->setFileFieldSettings($project_id, $instrument, $field_name, $filetypes));
         }
     }
 
@@ -74,23 +76,57 @@ class FiletypeEnforcementModule extends AbstractExternalModule
      * * MODULE METHODS *
      */
 
-    protected function saveFileFieldSettings()
+    /**
+     * Saves the enforced filetypes in the project settings as configured in the UI.
+     * @param string $project_id
+     * @param string $instrument
+     * The current instrument name.
+     * @param string $field_name
+     * The unique identifier of the file field. 
+     * @param array $filetypes
+     * An array of the filetypes to be enforced, saved from the UI checkboxes.
+     */
+    protected function setFileFieldSettings(string $project_id, string $instrument, string $field_name, array $filetypes)
+
+    // todo: handle renaming of field_name and deletion
     {
-        // placeholder for now
-        $model = [
-            "instrument_1" => [
-                "field_1_name" => "mimetypes",
-                "field_2_name" => "mimetypes"
-            ],
-            "instrument_2" => [
-                "field_1_name" => "mimetypes",
-                "field_2_name" => "mimetypes"
-            ]
-        ];
+        // * pseudo code for representation of data to be saved
+        // $model = [
+        //     "instrument_1" => [
+        //         "field_1_name" => "mimetypes",
+        //         "field_2_name" => "mimetypes"
+        //     ],
+        //     "instrument_2" => [
+        //         "field_1_name" => "mimetypes",
+        //         "field_2_name" => "mimetypes"
+        //     ]
+        // ];
 
-        $this->setProjectSetting("filefield_settings", $model, PROJECT_ID);
+        function format_mimetype_string(array $filetypes): string
+        {
+            $mimetype_string = "";
+            for ($i = 0; $i < sizeof($filetypes); $i++) {
+                if ($i !== sizeof($filetypes) - 1) {
+                    $mimetype_string .= DEFAULT_FILETYPES[$filetypes[$i]]["mimetype"] . ",";
+                } else {
+                    $mimetype_string .= DEFAULT_FILETYPES[$filetypes[$i]]["mimetype"];
+                }
+            }
+            return $mimetype_string;
+        }
 
-        // * Need to be able to in-place delete a field upon doing so from the UI
+        $mimetype_string = format_mimetype_string($filetypes);
+        $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id);
+        if ($filefield_settings == null) {
+            $settings = [];
+            $settings[$instrument][$field_name] = $mimetype_string;
+            $this->setProjectSetting('filefield_settings', $settings);
+            return $settings;
+        } else if (array_key_exists($instrument, $filefield_settings) || !array_key_exists($instrument, $filefield_settings)) {
+            $filefield_settings[$instrument][$field_name] = $mimetype_string;
+            $this->setProjectSetting('filefield_settings', $filefield_settings);
+            return $filefield_settings;
+        }
     }
 
     /**
@@ -110,15 +146,17 @@ class FiletypeEnforcementModule extends AbstractExternalModule
      */
     protected function showEnabledFiles()
     {
+        // $this->removeProjectSetting("filefield_settings");
         $settings = $this->getProjectSettings(PROJECT_ID);
-        echo "<strong>Project Settings (Enabled File Types)</strong>";
-        echo "<ul>";
-        foreach ($settings as $key => $value) {
-            if (str_contains($key, "enable_") && $value == 1) {
-                echo "<li>$key: true</li>";
-            }
-        }
-        echo "</ul>";
+        var_dump($settings);
+        // echo "<strong>Project Settings (Enabled File Types)</strong>";
+        // echo "<ul>";
+        // foreach ($settings as $key => $value) {
+        //     if (str_contains($key, "enable_") && $value == 1) {
+        //         echo "<li>$key: true</li>";
+        //     }
+        // }
+        // echo "</ul>";
     }
 
     protected function includeJs($file)

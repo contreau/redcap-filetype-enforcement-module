@@ -44,7 +44,7 @@ export function observeFieldEditorDialog(component, module) {
     const filetypeCheckboxes = document.querySelector(tagName);
     if (filetypeCheckboxes) {
       const savedData = await filetypeCheckboxes.saveEnforcedFiletypes();
-      console.log("saved. ", savedData);
+      console.log("saved. ", JSON.parse(savedData));
       dialogIsOpen = false;
       fieldname = "";
       unmountComponent();
