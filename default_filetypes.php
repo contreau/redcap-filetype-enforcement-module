@@ -33,12 +33,12 @@ const DEFAULT_FILETYPES = [
     ],
     "word" => [
         "display_name" => "Word",
-        "mimetype" => "application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "mimetype" => "application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "extensions" => [".doc, .docx"]
     ],
     "excel" => [
         "display_name" => "Excel",
-        "mimetype" => "application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "mimetype" => "application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "extensions" => [".xls, .xlsx"]
     ],
 

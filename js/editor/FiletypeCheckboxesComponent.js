@@ -20,7 +20,7 @@ export class FiletypeCheckboxesComponent extends HTMLElement {
 
       // Fetch enabled filetypes for the project
       this.#enabledFiletypes = await this.#getEnabledFiletypes(this.module);
-      const checkboxes = this.#generateCheckboxes(this.#enabledFiletypes);
+      const checkboxes = await this.#generateCheckboxes(this.#enabledFiletypes);
 
       const wc = document.createElement("template");
       wc.innerHTML = `
@@ -71,11 +71,16 @@ export class FiletypeCheckboxesComponent extends HTMLElement {
    * @param {Record<string, string[]>[]} filetypes
    * @returns {string}
    */
-  #generateCheckboxes(filetypes) {
+  async #generateCheckboxes(filetypes) {
+    const enforcedTypes = await this.#getEnforcedFiletypes(this.module);
     let checkboxesString = ``;
     for (const filetype of filetypes) {
       const name = filetype.display_name.toLowerCase();
-      checkboxesString += `<div><input type="checkbox" id="${name}" name="${name}" /><label for="${name}">${filetype.display_name}</label></div>`;
+      if (enforcedTypes !== null && enforcedTypes.includes(name)) {
+        checkboxesString += `<div><input type="checkbox" id="${name}" name="${name}" checked /><label for="${name}">${filetype.display_name}</label></div>`;
+      } else {
+        checkboxesString += `<div><input type="checkbox" id="${name}" name="${name}" /><label for="${name}">${filetype.display_name}</label></div>`;
+      }
     }
     return checkboxesString;
   }
@@ -101,8 +106,6 @@ export class FiletypeCheckboxesComponent extends HTMLElement {
       .filter((box) => box.checked)
       .map((box) => box.id);
 
-    // Todo: Save to module settings
-
     const payload = {
       field_name: this.fieldname, // i.e. file_upload
       enforced_filetypes: checkedFiletypes, // data
@@ -116,9 +119,10 @@ export class FiletypeCheckboxesComponent extends HTMLElement {
 
   /**
    * Fetches the filetypes already applied to fields, if they exist.
+   * @returns {Promise<string[]> | Promise<null>} An array of the enforced file ids for the field name that are saved in the module settings.
    */
   async #getEnforcedFiletypes(module) {
-    // Todo: after completing saveEnforcedFiletypes and saving data to module settings
-    const enforcedFiletypes = await module.ajax("get_enforced_filetypes");
+    const enforcedFiletypes = await module.ajax("get_enforced_filetypes", this.fieldname);
+    return enforcedFiletypes;
   }
 }

@@ -50,11 +50,32 @@ class FiletypeEnforcementModule extends AbstractExternalModule
                 return $enabled_files;
 
             case "get_filefield_settings":  // called in survey_page.js
+                // If it exists, send back the entire filefields settings object.
                 $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id);
+                $field_name = $payload;
                 if ($filefield_settings !== null) {
+
                     return $filefield_settings;
                 }
+                return null;
 
+            case "get_enforced_filetypes": // called in FiletypeCheckboxesComponent.js
+                // Send back an array of the filetype ids (lowercase keys of DEFAULT_FILETYPES) that are currently saved to be enforced.
+                $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id);
+                $field_name = $payload;
+                if (array_key_exists($field_name, $filefield_settings[$instrument]) && $filefield_settings[$instrument][$field_name] !== '') {
+                    $mimetypes = explode(",", $filefield_settings[$instrument][$field_name]);
+                    $file_ids = [];
+                    foreach (DEFAULT_FILETYPES as $key => $value) {
+                        foreach ($mimetypes as $type) {
+                            if (str_contains(DEFAULT_FILETYPES[$key]["mimetype"], $type) && !in_array($key, $file_ids)) {
+                                array_push($file_ids, $key);
+                            }
+                        }
+                    }
+                    return $file_ids;
+                }
+                return null;
 
             case "set_filefield_settings":
                 $data = json_decode($payload, true);
