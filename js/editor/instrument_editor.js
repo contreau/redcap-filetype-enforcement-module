@@ -16,5 +16,30 @@ import { FiletypeCheckboxesComponent } from "./FiletypeCheckboxesComponent.js";
     return cookieValue.split(".").reduce((acc, key) => acc[key], globalThis);
   };
 
+  // Mutation Observer for field editor dialog.
   observeFieldEditorDialog(FiletypeCheckboxesComponent, getModule());
+
+  // Network Observer for handling field deletion.
+  let performanceObserverIsProcessing = false;
+  const networkObserver = new PerformanceObserver(async (list) => {
+    if (performanceObserverIsProcessing) return;
+
+    const entries = list.getEntries();
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i];
+      if (
+        entry.initiatorType === "xmlhttprequest" &&
+        entry.responseStatus === 200 &&
+        entry.name.includes("delete_field.php")
+      ) {
+        performanceObserverIsProcessing = true;
+        const module = getModule();
+        const res = await module.ajax("delete_filefield");
+        console.log("deleted field.", res);
+        performanceObserverIsProcessing = false;
+        break;
+      }
+    }
+  });
+  networkObserver.observe({ type: "resource" });
 })();

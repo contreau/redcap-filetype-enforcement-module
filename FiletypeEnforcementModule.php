@@ -82,6 +82,19 @@ class FiletypeEnforcementModule extends AbstractExternalModule
                 $field_name = $data['field_name'];
                 $filetypes = $data['enforced_filetypes'];
                 return json_encode($this->setFileFieldSettings($project_id, $instrument, $field_name, $filetypes));
+
+            case "delete_filefield":
+                $current_fields = REDCap::getFieldNames([$instrument]);
+                $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id);
+                $instrument_settings = $filefield_settings[$instrument];
+                foreach ($instrument_settings as $key => $value) {
+                    if (!in_array($key, $current_fields)) {
+                        unset($instrument_settings[$key]);
+                    }
+                }
+                $filefield_settings[$instrument] = $instrument_settings;
+                $this->setProjectSetting("filefield_settings", $filefield_settings);
+                return $filefield_settings;
         }
     }
 
