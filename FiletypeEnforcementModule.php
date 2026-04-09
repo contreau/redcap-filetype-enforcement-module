@@ -50,7 +50,7 @@ class FiletypeEnforcementModule extends AbstractExternalModule
                 return $enabled_files;
 
             case "get_filefield_settings":  // called in survey_page.js
-                // If it exists, send back the entire filefields settings object.
+                // If it exists, send back the entire filefield settings object.
                 $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id);
                 $field_name = $payload;
                 if ($filefield_settings !== null) {
@@ -87,14 +87,16 @@ class FiletypeEnforcementModule extends AbstractExternalModule
                 $current_fields = REDCap::getFieldNames([$instrument]);
                 $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id);
                 $instrument_settings = $filefield_settings[$instrument];
+                $deleted_field = "";
                 foreach ($instrument_settings as $key => $value) {
                     if (!in_array($key, $current_fields)) {
                         unset($instrument_settings[$key]);
+                        $deleted_field = $key;
                     }
                 }
                 $filefield_settings[$instrument] = $instrument_settings;
                 $this->setProjectSetting("filefield_settings", $filefield_settings);
-                return $filefield_settings;
+                return $deleted_field;
         }
     }
 
@@ -121,21 +123,7 @@ class FiletypeEnforcementModule extends AbstractExternalModule
      * An array of the filetypes to be enforced, saved from the UI checkboxes.
      */
     protected function setFileFieldSettings(string $project_id, string $instrument, string $field_name, array $filetypes)
-
-    // todo: handle renaming of field_name and deletion
     {
-        // * pseudo code for representation of data to be saved
-        // $model = [
-        //     "instrument_1" => [
-        //         "field_1_name" => "mimetypes",
-        //         "field_2_name" => "mimetypes"
-        //     ],
-        //     "instrument_2" => [
-        //         "field_1_name" => "mimetypes",
-        //         "field_2_name" => "mimetypes"
-        //     ]
-        // ];
-
         function format_mimetype_string(array $filetypes): string
         {
             $mimetype_string = "";
@@ -176,21 +164,25 @@ class FiletypeEnforcementModule extends AbstractExternalModule
     }
 
     /**
-     * Temporary - See the enabled file types from the project settings at a glance.
+     * Temporary - See the file field settings at a glance.
      */
     protected function showEnabledFiles()
     {
-        // $this->removeProjectSetting("filefield_settings");
-        $settings = $this->getProjectSettings(PROJECT_ID);
+        $settings = $this->getProjectSetting("filefield_settings", PROJECT_ID);
         var_dump($settings);
-        // echo "<strong>Project Settings (Enabled File Types)</strong>";
-        // echo "<ul>";
-        // foreach ($settings as $key => $value) {
-        //     if (str_contains($key, "enable_") && $value == 1) {
-        //         echo "<li>$key: true</li>";
-        //     }
-        // }
-        // echo "</ul>";
+        // * representation of filefield data saved in the project/module settings
+        // $filefield_settings = [
+        //     "instrument_1" => [
+        //         "instrument_1_field_1_name" => "mimetypes",
+        //         "instrument_1_field_2_name" => "mimetypes",
+        //         etc.
+        //     ],
+        //     "instrument_2" => [
+        //         "instrument_2_field_1_name" => "mimetypes",
+        //         "instrument_2_field_2_name" => "mimetypes", 
+        //         etc.
+        //     ]
+        // ];
     }
 
     protected function includeJs($file)

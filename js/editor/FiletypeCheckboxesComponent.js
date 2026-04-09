@@ -66,6 +66,10 @@ export class FiletypeCheckboxesComponent extends HTMLElement {
     console.log(`disconnected (${this.fieldname})`);
   }
 
+  setFieldname(fieldname) {
+    this.fieldname = fieldname;
+  }
+
   /**
    * Generates the checkbox HTML for the filetypes enabled in the module settings.
    * @param {Record<string, string[]>[]} filetypes

@@ -35,7 +35,7 @@ import { FiletypeCheckboxesComponent } from "./FiletypeCheckboxesComponent.js";
         performanceObserverIsProcessing = true;
         const module = getModule();
         const res = await module.ajax("delete_filefield");
-        console.log("deleted field.", res);
+        console.log(`deleted field. (${res})`);
         performanceObserverIsProcessing = false;
         break;
       }
