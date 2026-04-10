@@ -14,6 +14,9 @@ export class FiletypeCheckboxesComponent extends HTMLElement {
     console.log(`connected (${this.fieldname})`);
     const shadow = this.shadowRoot ?? this.attachShadow({ mode: "open" });
 
+    this.preexistingFieldname = "";
+    if (this.fieldname !== "") this.preexistingFieldname = this.fieldname;
+
     if (!this.#initialized) {
       // Create element if not already made
       this.#initialized = true;
@@ -96,29 +99,25 @@ export class FiletypeCheckboxesComponent extends HTMLElement {
    * @returns {Promise<Record<string, string[]>[]>}
    */
   async #getEnabledFiletypes(module) {
-    // Todo: handle possibility of ajax failing, fallback to a sessionStorage value of the enabled filetypes - prob worth caching anyway.
     const enabledFiletypes = await module.ajax("get_enabled_filetypes"); // resolves to array
     return enabledFiletypes;
   }
 
   /**
    * Saves the checked filetypes in the module settings. Called from field_editor.js
-   * @returns {Record<string, string | string[]>}
+   * @returns {Promise<Record<string, string | string[]>>}
    */
-  async saveEnforcedFiletypes() {
+  async saveEnforcedFiletypes(fieldnameInputValue) {
     const checkedFiletypes = Array.from(this.shadowRoot.querySelectorAll("input[type='checkbox'"))
       .filter((box) => box.checked)
       .map((box) => box.id);
 
-    const payload = {
-      field_name: this.fieldname, // i.e. file_upload
-      enforced_filetypes: checkedFiletypes, // data
-    };
-
-    console.log(payload);
-
-    const response = await this.module.ajax("set_filefield_settings", JSON.stringify(payload));
-    return response;
+    if (fieldnameInputValue !== this.preexistingFieldname) {
+      this.fieldname = fieldnameInputValue;
+      return await this.#updateFieldname(this.module, checkedFiletypes);
+    } else {
+      return await this.#setFilefieldSettings(this.module, checkedFiletypes);
+    }
   }
 
   /**
@@ -128,5 +127,37 @@ export class FiletypeCheckboxesComponent extends HTMLElement {
   async #getEnforcedFiletypes(module) {
     const enforcedFiletypes = await module.ajax("get_enforced_filetypes", this.fieldname);
     return enforcedFiletypes;
+  }
+
+  /**
+   * Updates a field name and its data in the filefield settings.
+   * @param {*} module The JS module object.
+   * @param {string[]} checkedFiletypes The checked boxes of the selected filetypes.
+   * @returns {Promise<Record>} The current state of the saved data indicating the updated fieldname.
+   */
+  async #updateFieldname(module, checkedFiletypes) {
+    const payload = {
+      field_name: this.fieldname,
+      deprecated_field_name: this.preexistingFieldname,
+      enforced_filetypes: checkedFiletypes,
+    };
+    console.log(`updating field name: ${this.preexistingFieldname} -> ${this.fieldname}`);
+    const response = await module.ajax("update_fieldname", JSON.stringify(payload));
+    return response;
+  }
+
+  /**
+   * Saves a field name and its data to the filefield settings.
+   * @param {*} module The JS module object.
+   * @param {string[]} checkedFiletypes The checked boxes of the selected filetypes.
+   * @returns {Promise<Record>} The current state of the filefield settings.
+   */
+  async #setFilefieldSettings(module, checkedFiletypes) {
+    const payload = {
+      field_name: this.fieldname, // i.e. file_upload
+      enforced_filetypes: checkedFiletypes, // data
+    };
+    const response = await module.ajax("set_filefield_settings", JSON.stringify(payload));
+    return response;
   }
 }
