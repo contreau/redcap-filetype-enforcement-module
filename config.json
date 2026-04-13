@@ -15,6 +15,7 @@
     "get_enforced_filetypes",
     "set_filefield_settings",
     "delete_filefield",
+    "delete_instrument",
     "update_fieldname"
   ],
   "no-auth-ajax-actions": ["get_filefield_settings"],

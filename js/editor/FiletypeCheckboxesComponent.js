@@ -125,8 +125,12 @@ export class FiletypeCheckboxesComponent extends HTMLElement {
    * @returns {Promise<string[]> | Promise<null>} An array of the enforced file ids for the field name that are saved in the module settings.
    */
   async #getEnforcedFiletypes(module) {
-    const enforcedFiletypes = await module.ajax("get_enforced_filetypes", this.fieldname);
-    return enforcedFiletypes;
+    if (this.fieldname === "") {
+      return null;
+    } else {
+      const enforcedFiletypes = await module.ajax("get_enforced_filetypes", this.fieldname);
+      return enforcedFiletypes;
+    }
   }
 
   /**

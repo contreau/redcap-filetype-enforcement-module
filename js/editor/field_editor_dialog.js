@@ -1,5 +1,7 @@
 /**
  * Creates the mutation observer for the field editor dialog in the instrument builder page.
+ * @param {HTMLElement} component FiletypeCheckboxesComponent
+ * @param {*} module JS Module Object
  */
 export function observeFieldEditorDialog(component, module) {
   const tagName = component.tagName ?? "filetype-checkboxes";

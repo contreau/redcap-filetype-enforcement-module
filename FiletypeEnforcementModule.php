@@ -11,27 +11,42 @@ require_once "default_filetypes.php";
 class FiletypeEnforcementModule extends AbstractExternalModule
 {
     /**
-     * * REDCap HOOKS *
+     * * REDCap HOOKS & ACCOMPANYING FUNCTIONS *
      */
 
-    // * NOTE: This only runs code on instrument builder pages.
-    public function redcap_every_page_top()
+    public function redcap_every_page_top($project_id)
     {
-        // * Gets the instrument names or 'form name', which is used in the query string of the designer page URL (?pid={int}&page=form_name)
-        // * Since there could be multiple instruments on a project, logic from here forward should apply iteratively to the instruments.
-        // todo: Make the below logic its own function to call from this hook
-        $instrument_names = array_keys(REDCap::getInstrumentNames());
+        $this->runModuleInInstrumentEditor(); // * Only executes on instrument editor pages of the Online Designer (i.e. where editors are creating / editing fields).
+        $this->runModuleInInstrumentOptions($project_id); // * Only executes on the default view of the Online Designer, when it reads 'Data Collection Instruments'.
+
+        // Dev convenience function for showing enabled files at a glance
+        $this->showEnabledFiles();
+    }
+
+    protected function runModuleInInstrumentEditor(): void
+    {
+        $instrument_names = array_keys(REDCap::getInstrumentNames()); // Gets the instrument names or 'form name', which is used in the query string of the designer page URL (?pid={int}&page=form_name)
+
+        // * Since there could be multiple instruments on a project, the module is applied iteratively.
         foreach ($instrument_names as $name) {
             if ($_GET['page'] == $name && !isset($_GET['s'])) { // the second check here prevents the ensuing code block from running on the live /surveys pages, which have a query parameter of 's'
                 // Set the JS Module Object name as a cookie for the JS script to grab
                 $this->initializeJavascriptModuleObject();
                 setcookie("js_module_object", $this->getJavascriptModuleObjectName());
                 $this->includeJs("js/editor/instrument_editor.js");
-
-
-                // Dev convenience function for showing enabled files at a glance
-                $this->showEnabledFiles();
             }
+        }
+    }
+
+    protected function runModuleInInstrumentOptions(string $project_id): void
+    {
+        if (
+            str_contains($_SERVER["SCRIPT_NAME"], "/Design/online_designer.php") &&
+            $_SERVER["QUERY_STRING"] === "pid=$project_id"
+        ) {
+            $this->initializeJavascriptModuleObject();
+            setcookie("js_module_object", $this->getJavascriptModuleObjectName());
+            $this->includeJs("js/editor/instrument_options.js");
         }
     }
 
@@ -63,6 +78,9 @@ class FiletypeEnforcementModule extends AbstractExternalModule
             case "delete_filefield":
                 return $this->deleteFilefield($project_id, $instrument);
 
+            case "delete_instrument":
+                return $this->deleteInstrument($project_id);
+
             case "update_fieldname":
                 $data = json_decode($payload, true);
                 return json_encode($this->updateFieldname($project_id, $instrument, $data));
@@ -73,7 +91,7 @@ class FiletypeEnforcementModule extends AbstractExternalModule
      * * MODULE METHODS *
      */
 
-    protected function getEnabledFiletypes(string $project_id)
+    protected function getEnabledFiletypes(string $project_id): array
     {
         $enabled_files = [];
         foreach ($this->getProjectSettings($project_id) as $key => $value) {
@@ -85,7 +103,7 @@ class FiletypeEnforcementModule extends AbstractExternalModule
         return $enabled_files;
     }
 
-    protected function getFilefieldSettings(string $project_id, string $payload)
+    protected function getFilefieldSettings(string $project_id, string $payload): array | null
     {
         // If it exists, send back the entire filefield settings object.
         $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id);
@@ -96,7 +114,7 @@ class FiletypeEnforcementModule extends AbstractExternalModule
         return null;
     }
 
-    protected function getEnforcedFiletypes(string $project_id, string $payload, string $instrument)
+    protected function getEnforcedFiletypes(string $project_id, string $payload, string $instrument): array | null
     {
         // Send back an array of the filetype ids (lowercase keys of DEFAULT_FILETYPES) that are currently saved to be enforced.
         $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id);
@@ -116,9 +134,13 @@ class FiletypeEnforcementModule extends AbstractExternalModule
         return null;
     }
 
-    protected function deleteFilefield(string $project_id, string $instrument)
+    protected function deleteFilefield(string $project_id, string $instrument): string
     {
         $current_fields = REDCap::getFieldNames([$instrument]);
+        if ($current_fields == false) {
+            // When the last field of an instrument is deleted from the editor and REDCap auto-deletes the instrument, this will just remove the instrument from the file field settings.
+            return $this->deleteInstrument($project_id);
+        }
         $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id);
         $instrument_settings = $filefield_settings[$instrument];
         $deleted_field = "";
@@ -133,14 +155,33 @@ class FiletypeEnforcementModule extends AbstractExternalModule
         return $deleted_field;
     }
 
-    protected function updateInstrumentSettings(string $project_id, string $instrument, array $settings): void
+    protected function deleteInstrument(string $project_id): string
+    {
+        $current_instruments = array_keys(REDCap::getInstrumentNames());
+        $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id);
+        $deleted_instrument = "";
+        foreach ($filefield_settings as $instrument_name => $data) {
+            if (!in_array($instrument_name, $current_instruments)) {
+                unset($filefield_settings[$instrument_name]);
+                $deleted_instrument = $instrument_name;
+            }
+        }
+        $this->setProjectSetting("filefield_settings", $filefield_settings);
+        return $deleted_instrument;
+    }
+
+    protected function updateInstrumentSettings(string $project_id, string $instrument, array | null $settings): void
     {
         $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id) ?? [];
-        $filefield_settings[$instrument] = $settings;
+        if ($settings == null) {
+            $filefield_settings[$instrument] = null;
+        } else {
+            $filefield_settings[$instrument] = $settings;
+        }
         $this->setProjectSetting("filefield_settings", $filefield_settings);
     }
 
-    protected function updateFieldname(string $project_id, string $instrument, array $data)
+    protected function updateFieldname(string $project_id, string $instrument, array $data): array
     {
         $field_name = $data['field_name'];
         $deprecated_field_name = $data['deprecated_field_name'];
@@ -167,7 +208,7 @@ class FiletypeEnforcementModule extends AbstractExternalModule
      * @param array $filetypes
      * An array of the filetypes to be enforced, saved from the UI checkboxes.
      */
-    protected function setFilefieldSettings(string $project_id, string $instrument, array $data)
+    protected function setFilefieldSettings(string $project_id, string $instrument, array $data): array
     {
         $field_name = $data['field_name'];
         $filetypes = $data['enforced_filetypes'];
@@ -200,7 +241,7 @@ class FiletypeEnforcementModule extends AbstractExternalModule
     /**
      * Temporary - See the file field settings at a glance.
      */
-    protected function showEnabledFiles()
+    protected function showEnabledFiles(): void
     {
         $settings = $this->getProjectSetting("filefield_settings", PROJECT_ID);
         var_dump($settings);
