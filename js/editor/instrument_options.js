@@ -12,6 +12,12 @@ import { observeNetwork } from "./network_observer.js";
     return cookieValue.split(".").reduce((acc, key) => acc[key], globalThis);
   };
 
-  // Network Observer for handling instrument deletion.
+  getModule()
+    .ajax("update_instrument_name")
+    .then((res) => {
+      console.log(res);
+    });
+
+  // Network Observers for handling instrument deletion.
   observeNetwork("delete_form.php", getModule());
 })();

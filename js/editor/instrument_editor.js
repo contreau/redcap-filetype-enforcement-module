@@ -17,6 +17,12 @@ import { FiletypeCheckboxesComponent } from "./FiletypeCheckboxesComponent.js";
     return cookieValue.split(".").reduce((acc, key) => acc[key], globalThis);
   };
 
+  getModule()
+    .ajax("update_instrument_name")
+    .then((res) => {
+      console.log(res);
+    });
+
   // Mutation Observer for field editor dialog.
   observeFieldEditorDialog(FiletypeCheckboxesComponent, getModule());
 

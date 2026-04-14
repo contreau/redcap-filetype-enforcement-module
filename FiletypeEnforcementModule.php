@@ -23,6 +23,9 @@ class FiletypeEnforcementModule extends AbstractExternalModule
         $this->showEnabledFiles();
     }
 
+    /**
+     * Enables interaction with this module on instrument editor pages.
+     */
     protected function runModuleInInstrumentEditor(): void
     {
         $instrument_names = array_keys(REDCap::getInstrumentNames()); // Gets the instrument names or 'form name', which is used in the query string of the designer page URL (?pid={int}&page=form_name)
@@ -38,6 +41,10 @@ class FiletypeEnforcementModule extends AbstractExternalModule
         }
     }
 
+    /**
+     * Enables interaction with this module on the base Online Designer page.
+     * @param string $project_id
+     */
     protected function runModuleInInstrumentOptions(string $project_id): void
     {
         if (
@@ -84,6 +91,9 @@ class FiletypeEnforcementModule extends AbstractExternalModule
             case "update_fieldname":
                 $data = json_decode($payload, true);
                 return json_encode($this->updateFieldname($project_id, $instrument, $data));
+
+            case "update_instrument_name":
+                return $this->updateInstrumentName($project_id);
         }
     }
 
@@ -91,6 +101,10 @@ class FiletypeEnforcementModule extends AbstractExternalModule
      * * MODULE METHODS *
      */
 
+    /**
+     * Fetches the file types that have been enabled from the module settings.
+     * @param string $project_id
+     */
     protected function getEnabledFiletypes(string $project_id): array
     {
         $enabled_files = [];
@@ -103,6 +117,12 @@ class FiletypeEnforcementModule extends AbstractExternalModule
         return $enabled_files;
     }
 
+    /**
+     * Fetches all configured file field settings for the project.
+     * @param string $project_id
+     * @param string $payload Field name data from the client.
+     * @return array|null The settings array or null if nothing is configured.
+     */
     protected function getFilefieldSettings(string $project_id, string $payload): array | null
     {
         // If it exists, send back the entire filefield settings object.
@@ -114,11 +134,19 @@ class FiletypeEnforcementModule extends AbstractExternalModule
         return null;
     }
 
+    /**
+     * Fetches the file types to be enforced for a provided field name.
+     * @param string $project_id
+     * @param string $payload Field name data from the client.
+     * @param string $instrument
+     * @return array|null An array of the enforced file types for the given field, or null if none are saved to the field.
+     */
     protected function getEnforcedFiletypes(string $project_id, string $payload, string $instrument): array | null
     {
         // Send back an array of the filetype ids (lowercase keys of DEFAULT_FILETYPES) that are currently saved to be enforced.
         $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id);
         $field_name = $payload;
+
         if (array_key_exists($field_name, $filefield_settings[$instrument]) && $filefield_settings[$instrument][$field_name] !== '') {
             $mimetypes = explode(",", $filefield_settings[$instrument][$field_name]);
             $file_ids = [];
@@ -134,6 +162,11 @@ class FiletypeEnforcementModule extends AbstractExternalModule
         return null;
     }
 
+    /**
+     * Deletes a file field from a specific instrument in the file field settings when done so in the UI.
+     * @param string $project_id
+     * @param string $instrument
+     */
     protected function deleteFilefield(string $project_id, string $instrument): string
     {
         $current_fields = REDCap::getFieldNames([$instrument]);
@@ -141,35 +174,50 @@ class FiletypeEnforcementModule extends AbstractExternalModule
             // When the last field of an instrument is deleted from the editor and REDCap auto-deletes the instrument, this will just remove the instrument from the file field settings.
             return $this->deleteInstrument($project_id);
         }
+
         $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id);
         $instrument_settings = $filefield_settings[$instrument];
         $deleted_field = "";
+
         foreach ($instrument_settings as $key => $value) {
             if (!in_array($key, $current_fields)) {
                 unset($instrument_settings[$key]);
                 $deleted_field = $key;
             }
         }
+
         $filefield_settings[$instrument] = $instrument_settings;
         $this->setProjectSetting("filefield_settings", $filefield_settings);
         return $deleted_field;
     }
 
+    /**
+     * Deletes an instrument from the project in the file field settings when done so from the UI.
+     * @param string $project_id
+     */
     protected function deleteInstrument(string $project_id): string
     {
         $current_instruments = array_keys(REDCap::getInstrumentNames());
         $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id);
         $deleted_instrument = "";
+
         foreach ($filefield_settings as $instrument_name => $data) {
             if (!in_array($instrument_name, $current_instruments)) {
                 unset($filefield_settings[$instrument_name]);
                 $deleted_instrument = $instrument_name;
             }
         }
+
         $this->setProjectSetting("filefield_settings", $filefield_settings);
         return $deleted_instrument;
     }
 
+    /**
+     * Updates an instrument's settings.
+     * @param string $project_id
+     * @param string $instrument
+     * @param array|null $settings The data to be the value of an instrument key in the file field settings associated array. 
+     */
     protected function updateInstrumentSettings(string $project_id, string $instrument, array | null $settings): void
     {
         $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id) ?? [];
@@ -181,6 +229,13 @@ class FiletypeEnforcementModule extends AbstractExternalModule
         $this->setProjectSetting("filefield_settings", $filefield_settings);
     }
 
+    /**
+     * Updates a field name in the file field settings when done so in the UI.
+     * @param string $project_id
+     * @param string $instrument
+     * @param array $data The field data from the client.
+     * @return array The up-to-date file field settings associated array.
+     */
     protected function updateFieldname(string $project_id, string $instrument, array $data): array
     {
         $field_name = $data['field_name'];
@@ -197,16 +252,54 @@ class FiletypeEnforcementModule extends AbstractExternalModule
         ]);
     }
 
+    /**
+     * @param string $project_id
+     * Runs when either the instrument list or editor pages load, checking via diff that the instrument names are in sync between the file field settings and the base application.
+     */
+    protected function updateInstrumentName(string $project_id): string
+    {
+        $current_instruments = array_keys(REDCap::getInstrumentNames());
+        $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id);
+        $deprecated_instrument_name = "";
+        $new_instrument_name = "";
+        $data = null;
+
+        // Find the deprecated key (in settings but not in current instruments)
+        foreach ($filefield_settings as $instrument_name => $value) {
+            if (!in_array($instrument_name, $current_instruments)) {
+                $deprecated_instrument_name = $instrument_name;
+                $data = $value;
+                unset($filefield_settings[$instrument_name]);
+                break;
+            }
+        }
+
+        // Find the new key (in current instruments but not in settings)
+        foreach ($current_instruments as $name) {
+            if (!array_key_exists($name, $filefield_settings)) {
+                $new_instrument_name = $name;
+                break;
+            }
+        }
+
+        if ($deprecated_instrument_name !== "" && $new_instrument_name !== "") {
+            $filefield_settings[$new_instrument_name] = $data ?? [];
+            $this->setProjectSetting("filefield_settings", $filefield_settings);
+            return "updated instrument name: $deprecated_instrument_name -> $new_instrument_name";
+        }
+
+        return "no rename detected";
+    }
+
 
     /**
      * Saves the enforced filetypes in the project settings as configured in the UI.
      * @param string $project_id
      * @param string $instrument
      * The current instrument name.
-     * @param string $field_name
-     * The unique identifier of the file field. 
-     * @param array $filetypes
-     * An array of the filetypes to be enforced, saved from the UI checkboxes.
+     * @param array $data
+     * The field data sent from the client to be saved.
+     * @return array The up-to-date file field settings associated array.
      */
     protected function setFilefieldSettings(string $project_id, string $instrument, array $data): array
     {
@@ -245,19 +338,6 @@ class FiletypeEnforcementModule extends AbstractExternalModule
     {
         $settings = $this->getProjectSetting("filefield_settings", PROJECT_ID);
         var_dump($settings);
-        // * representation of filefield data saved in the project/module settings
-        // $filefield_settings = [
-        //     "instrument_1" => [
-        //         "instrument_1_field_1_name" => "mimetypes",
-        //         "instrument_1_field_2_name" => "mimetypes",
-        //         etc.
-        //     ],
-        //     "instrument_2" => [
-        //         "instrument_2_field_1_name" => "mimetypes",
-        //         "instrument_2_field_2_name" => "mimetypes", 
-        //         etc.
-        //     ]
-        // ];
     }
 
     protected function includeJs($file)

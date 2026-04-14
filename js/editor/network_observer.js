@@ -25,6 +25,7 @@ export async function observeNetwork(phpFilename, module) {
           const res = await module.ajax("delete_instrument");
           console.log(`deleted instrument. (${res})`);
         }
+
         performanceObserverIsProcessing = false;
         break;
       }

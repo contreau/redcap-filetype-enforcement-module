@@ -16,7 +16,8 @@
     "set_filefield_settings",
     "delete_filefield",
     "delete_instrument",
-    "update_fieldname"
+    "update_fieldname",
+    "update_instrument_name"
   ],
   "no-auth-ajax-actions": ["get_filefield_settings"],
   "project-settings": [
