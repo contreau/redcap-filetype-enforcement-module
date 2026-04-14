@@ -1,3 +1,5 @@
+import { applyFiletypeEnforcement } from "./enforcement_script.js";
+
 /**
  * Runs on survey pages (the end user's client).
  */
@@ -14,11 +16,10 @@
   }
 
   const module = getModule();
-  async function getFiletypeSettings(module) {
+  async function getFilefieldSettings(module) {
     const settings = await module.ajax("get_filefield_settings");
-    console.log(settings);
-    return settings;
+    if (settings !== null) applyFiletypeEnforcement(settings);
   }
 
-  getFiletypeSettings(module);
+  getFilefieldSettings(module);
 })();

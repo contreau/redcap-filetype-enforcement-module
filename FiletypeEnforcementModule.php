@@ -18,9 +18,6 @@ class FiletypeEnforcementModule extends AbstractExternalModule
     {
         $this->runModuleInInstrumentEditor(); // * Only executes on instrument editor pages of the Online Designer (i.e. where editors are creating / editing fields).
         $this->runModuleInInstrumentOptions($project_id); // * Only executes on the default view of the Online Designer, when it reads 'Data Collection Instruments'.
-
-        // Dev convenience function for showing enabled files at a glance
-        $this->showEnabledFiles();
     }
 
     /**
@@ -73,7 +70,7 @@ class FiletypeEnforcementModule extends AbstractExternalModule
                 return $this->getEnabledFiletypes($project_id);
 
             case "get_filefield_settings":  // called in survey_page.js
-                return $this->getFilefieldSettings($project_id, $payload);
+                return $this->getFilefieldSettings($project_id, $instrument);
 
             case "get_enforced_filetypes": // called in FiletypeCheckboxesComponent.js
                 return $this->getEnforcedFiletypes($project_id, $payload, $instrument);
@@ -118,18 +115,17 @@ class FiletypeEnforcementModule extends AbstractExternalModule
     }
 
     /**
-     * Fetches all configured file field settings for the project.
+     * Fetches the file field settings for the provided instrument.
      * @param string $project_id
-     * @param string $payload Field name data from the client.
+     * @param string $instrument
      * @return array|null The settings array or null if nothing is configured.
      */
-    protected function getFilefieldSettings(string $project_id, string $payload): array | null
+    protected function getFilefieldSettings(string $project_id, string $instrument): array | null
     {
         // If it exists, send back the entire filefield settings object.
         $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id);
-        $field_name = $payload;
-        if ($filefield_settings !== null) {
-            return $filefield_settings;
+        if ($filefield_settings !== null && isset($filefield_settings[$instrument])) {
+            return $filefield_settings[$instrument];
         }
         return null;
     }
@@ -329,15 +325,6 @@ class FiletypeEnforcementModule extends AbstractExternalModule
     {
         $field_names = REDCap::getFieldNames($instrument_name);
         return array_values(array_filter($field_names, fn($field_name) => REDCap::getFieldType($field_name) == "file"));
-    }
-
-    /**
-     * Temporary - See the file field settings at a glance.
-     */
-    protected function showEnabledFiles(): void
-    {
-        $settings = $this->getProjectSetting("filefield_settings", PROJECT_ID);
-        var_dump($settings);
     }
 
     protected function includeJs($file)
