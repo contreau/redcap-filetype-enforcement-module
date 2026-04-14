@@ -49,6 +49,8 @@ export class FiletypeCheckboxesComponent extends HTMLElement {
           padding-block: 5px;
         }
         div#filetype-checkboxes {
+          display: grid;
+          grid-template-columns: repeat(3, 0.15fr);
           div {
             display: flex;
             align-items: center;
