@@ -1,5 +1,5 @@
-import { getModule } from "../utils.js";
-import { observeNetwork } from "./network_observer.js";
+import { getModule } from "../shared/utils.js";
+import { observeNetwork } from "../shared/network_observer.js";
 
 (() => {
   getModule()

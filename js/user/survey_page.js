@@ -1,5 +1,5 @@
-import { getModule } from "../utils.js";
-import { applyFiletypeEnforcement } from "./enforcement_script.js";
+import { getModule } from "../shared/utils.js";
+import { applyFiletypeEnforcement } from "../shared/enforcement_script.js";
 
 /**
  * Runs on survey pages (the end user's client).
