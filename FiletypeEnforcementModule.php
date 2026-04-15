@@ -125,12 +125,27 @@ class FiletypeEnforcementModule extends AbstractExternalModule
      */
     protected function getFilefieldSettings(string $project_id, string $instrument): array | null
     {
-        // If it exists, send back the entire filefield settings object.
         $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id);
-        if ($filefield_settings !== null && isset($filefield_settings[$instrument])) {
-            return $filefield_settings[$instrument];
+        if ($filefield_settings === null || !isset($filefield_settings[$instrument])) {
+            return null;
         }
-        return null;
+
+        $result = [];
+        foreach ($filefield_settings[$instrument] as $field_name => $mimetype_string) {
+            $extensions = [];
+            foreach (DEFAULT_FILETYPES as $type) {
+                foreach (explode(",", $mimetype_string) as $mime) {
+                    if (str_contains($type["mimetype"], trim($mime))) {
+                        $extensions = array_merge($extensions, $type["extensions"]);
+                    }
+                }
+            }
+            $result[$field_name] = [
+                "mimetypes" => $mimetype_string,
+                "extensions" => array_unique($extensions)
+            ];
+        }
+        return $result;
     }
 
     /**

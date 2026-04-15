@@ -6,23 +6,25 @@ export function applyFiletypeEnforcement(settings) {
   /**
    * Click event callback.
    * @param {string} mimetypeString
+   * @param {string[]} extensions
    */
-  function setInputAcceptAttribute(mimetypeString) {
+  function setInputAcceptAttribute(mimetypeString, extensions) {
     const fileUploadInput = /** @type {HTMLInputElement} */ (
       document.querySelector("form#form_file_upload div#f1_upload_form div input")
     );
     if (fileUploadInput.getAttribute("accept") === null) {
       fileUploadInput.setAttribute("accept", mimetypeString);
     }
-    rejectInvalidFileOnUpload(fileUploadInput, mimetypeString);
+    rejectInvalidFileOnUpload(fileUploadInput, mimetypeString, extensions);
   }
 
   /**
    * Clears the file field out and alerts the user that the type must be of an allowed MIME type.
    * @param {HTMLInputElement} fileUploadInput
    * @param {string} mimetypeString
+   * @param {string[]} extensions
    */
-  function rejectInvalidFileOnUpload(fileUploadInput, mimetypeString) {
+  function rejectInvalidFileOnUpload(fileUploadInput, mimetypeString, extensions) {
     const allowedTypes = mimetypeString.split(",").map((str) => str.trim());
     fileUploadInput.addEventListener("change", (e) => {
       const input = /** @type {HTMLInputElement} */ (e.target);
@@ -42,7 +44,7 @@ export function applyFiletypeEnforcement(settings) {
 
           // Set id and inner HTML
           rejectionMessageElement.id = "file-rejection-message";
-          rejectionMessageElement.innerHTML = `<i class='fas fa-triangle-exclamation'></i>Unsupported file type.`;
+          rejectionMessageElement.innerHTML = `<i class='fas fa-triangle-exclamation'></i>Unsupported file type.<br/>Valid file extensions: ${extensions.join(", ")}`;
 
           // Set styles
           rejectionMessageElement.style.fontWeight = "bold";
@@ -66,12 +68,13 @@ export function applyFiletypeEnforcement(settings) {
    * @param {string} fieldname
    * @param {HTMLTableRowElement} fieldNode
    * @param {string} mimetypeString
+   * @param {string[]} extensions
    */
-  function registerFileValidation(fieldname, fieldNode, mimetypeString) {
+  function registerFileValidation(fieldname, fieldNode, mimetypeString, extensions) {
     // - Case 1: Initial click event assignment
     const uploadButton = fieldNode.querySelector(`a.fileuploadlink`);
     uploadButton?.addEventListener("click", () => {
-      if (mimetypeString !== "") setInputAcceptAttribute(mimetypeString);
+      if (mimetypeString !== "") setInputAcceptAttribute(mimetypeString, extensions);
     });
 
     // - Case 2: A file is already uploaded, but the user chooses to either upload a new file (in-place replacement) or delete the current one.
@@ -84,7 +87,7 @@ export function applyFiletypeEnforcement(settings) {
           if (!addedListener) {
             const uploadButton = fieldNode.querySelector(`a.fileuploadlink`);
             uploadButton?.addEventListener("click", () => {
-              if (mimetypeString !== "") setInputAcceptAttribute(mimetypeString);
+              if (mimetypeString !== "") setInputAcceptAttribute(mimetypeString, extensions);
             });
             addedListener = true;
           }
@@ -103,7 +106,7 @@ export function applyFiletypeEnforcement(settings) {
   for (const fieldname of Object.keys(settings)) {
     const fieldNode = document.querySelector(`tr[sq_id="${fieldname}"]`);
     if (!fieldNode) continue;
-    const mimetypeString = settings[fieldname];
-    registerFileValidation(fieldname, fieldNode, mimetypeString);
+    const { mimetypes, extensions } = settings[fieldname];
+    registerFileValidation(fieldname, fieldNode, mimetypes, extensions);
   }
 }
