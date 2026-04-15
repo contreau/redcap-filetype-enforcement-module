@@ -19,10 +19,10 @@ export async function observeNetwork(phpFilename, module) {
         performanceObserverIsProcessing = true;
 
         if (phpFilename === "delete_field.php") {
-          const res = await module.ajax("delete_filefield");
+          const res = await module.ajax("sync_filefield");
           console.log(`deleted field. (${res})`);
         } else if (phpFilename === "delete_form.php") {
-          const res = await module.ajax("delete_instrument");
+          const res = await module.ajax("sync_instrument");
           console.log(`deleted instrument. (${res})`);
         }
 

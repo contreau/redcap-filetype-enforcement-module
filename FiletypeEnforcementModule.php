@@ -62,28 +62,28 @@ class FiletypeEnforcementModule extends AbstractExternalModule
         $this->includeJs("js/user/survey_page.js");
     }
 
-    // * Handle ajax calls from JS here
+    // * Handlers for ajax calls from JS
     public function redcap_module_ajax($action, $payload, $project_id, $record, $instrument)
     {
         switch ($action) {
-            case "get_enabled_filetypes": // called in FiletypeCheckboxesComponent.js
+            case "get_enabled_filetypes":
                 return $this->getEnabledFiletypes($project_id);
 
-            case "get_filefield_settings":  // called in survey_page.js
+            case "get_filefield_settings":
                 return $this->getFilefieldSettings($project_id, $instrument);
 
-            case "get_enforced_filetypes": // called in FiletypeCheckboxesComponent.js
+            case "get_enforced_filetypes":
                 return $this->getEnforcedFiletypes($project_id, $payload, $instrument);
 
             case "set_filefield_settings":
                 $data = json_decode($payload, true);
                 return json_encode($this->setFilefieldSettings($project_id, $instrument, $data));
 
-            case "delete_filefield":
-                return $this->deleteFilefield($project_id, $instrument);
+            case "sync_filefield":
+                return $this->syncFilefield($project_id, $instrument);
 
-            case "delete_instrument":
-                return $this->deleteInstrument($project_id);
+            case "sync_instrument":
+                return $this->syncInstrument($project_id);
 
             case "update_fieldname":
                 $data = json_decode($payload, true);
@@ -91,6 +91,9 @@ class FiletypeEnforcementModule extends AbstractExternalModule
 
             case "update_instrument_name":
                 return $this->updateInstrumentName($project_id);
+
+            case "remove_filefield":
+                return $this->removeFilefield($project_id, $instrument, $payload);
         }
     }
 
@@ -159,16 +162,16 @@ class FiletypeEnforcementModule extends AbstractExternalModule
     }
 
     /**
-     * Deletes a file field from a specific instrument in the file field settings when done so in the UI.
+     * Synchronizes data at the file field key level between the file field settings and the UI.
      * @param string $project_id
      * @param string $instrument
      */
-    protected function deleteFilefield(string $project_id, string $instrument): string
+    protected function syncFilefield(string $project_id, string $instrument): string
     {
         $current_fields = REDCap::getFieldNames([$instrument]);
         if ($current_fields == false) {
             // When the last field of an instrument is deleted from the editor and REDCap auto-deletes the instrument, this will just remove the instrument from the file field settings.
-            return $this->deleteInstrument($project_id);
+            return $this->syncInstrument($project_id);
         }
 
         $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id);
@@ -188,10 +191,10 @@ class FiletypeEnforcementModule extends AbstractExternalModule
     }
 
     /**
-     * Deletes an instrument from the project in the file field settings when done so from the UI.
+     * Synchronizes data at the instrument key level between the file field settings and the UI.
      * @param string $project_id
      */
-    protected function deleteInstrument(string $project_id): string
+    protected function syncInstrument(string $project_id): string
     {
         $current_instruments = array_keys(REDCap::getInstrumentNames());
         $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id);
@@ -249,8 +252,8 @@ class FiletypeEnforcementModule extends AbstractExternalModule
     }
 
     /**
-     * @param string $project_id
      * Runs when either the instrument list or editor pages load, checking via diff that the instrument names are in sync between the file field settings and the base application.
+     * @param string $project_id
      */
     protected function updateInstrumentName(string $project_id): string
     {
@@ -314,21 +317,29 @@ class FiletypeEnforcementModule extends AbstractExternalModule
         return $filefield_settings;
     }
 
-
     /**
-     * Returns the sq_id values for all file fields in the project.
-     * @param string $instrument_name 
-     * The 'form name' or unique name of the instrument.
-     * @return array Associated Array of the sq_id strings.
+     * Removes a specified field name from the file field settings. Runs when the field dialog is saved and the saved field type is NOT a file.
+     * @param string $project_id
+     * @param string $instrument
+     * @param string $field_name The file field to be directly removed.
      */
-    protected function getProjectFilefieldIds(string $instrument_name): array
+    protected function removeFilefield(string $project_id, string $instrument, string $field_name): string
     {
-        $field_names = REDCap::getFieldNames($instrument_name);
-        return array_values(array_filter($field_names, fn($field_name) => REDCap::getFieldType($field_name) == "file"));
+        $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id);
+        if (!isset($filefield_settings[$instrument][$field_name])) {
+            return "field not found: $field_name";
+        }
+        unset($filefield_settings[$instrument][$field_name]);
+        $this->setProjectSetting("filefield_settings", $filefield_settings);
+        return $field_name;
     }
 
-    protected function includeJs($file)
+    /**
+     * Injects JavaScript.
+     * @param string $filepath
+     */
+    protected function includeJs(string $filepath): void
     {
-        echo '<script type="module" src="' . $this->getUrl($file) . '"></script>';
+        echo '<script type="module" src="' . $this->getUrl($filepath) . '"></script>';
     }
 }
