@@ -24,11 +24,12 @@ export async function observeFieldPreviewRerender(module) {
 
 /**
  * Displays the enforced filetypes per file field on the instrument editor page; enables knowing active filetypes without having to open a field editor dialog.
- * To be run on in instrument_editor.js as well as on field dialog save.
+ * Also displays beneath a file field's title on live survey pages.
  * @param {*} module JS Module Object
+ * @param {string[] | null} filefieldSettings
  */
-async function displayFiletypesAtGlance(module) {
-  const filefieldSettings = await module.ajax("get_filefield_settings");
+export async function displayFiletypesAtGlance(module, filefieldSettings = null) {
+  if (!filefieldSettings && module) filefieldSettings = await module.ajax("get_filefield_settings");
   for (const fieldname of Object.keys(filefieldSettings)) {
     createFiletypesLabel(fieldname, filefieldSettings);
   }
