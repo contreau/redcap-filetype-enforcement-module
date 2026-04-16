@@ -6,13 +6,14 @@
   "authors": [
     {
       "name": "Conor Kelley",
-      "email": "conor.kelley@gwu.edu",
+      "email": "cfk102@gmail.com",
       "institution": "The George Washington University"
     }
   ],
   "auth-ajax-actions": [
     "get_enabled_filetypes",
     "get_enforced_filetypes",
+    "get_filefield_settings",
     "set_filefield_settings",
     "sync_filefield",
     "sync_instrument",
