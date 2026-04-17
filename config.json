@@ -25,7 +25,7 @@
   "project-settings": [
     {
       "key": "settings_description",
-      "name": "<strong>INSTRUCTIONS:</strong> Check each file type that you would like to make available for your file upload fields. You can then choose among these in the instrument builder.",
+      "name": "<strong>INSTRUCTIONS:</strong> Check each file type that you would like to make available for your file upload fields. You can then choose among these in the instrument builder.<br/><br/><strong>IMPORTANT:</strong> If you have the Online Designer open while changing this configuration, you must refresh that page before continuing your instrument design.",
       "type": "descriptive"
     },
     {
@@ -66,6 +66,41 @@
     {
       "key": "enable_tiff",
       "name": "Enable TIFF image files (.tiff, .tif)",
+      "type": "checkbox"
+    },
+    {
+      "key": "enable_powerpoint",
+      "name": "Enable Powerpoint files (.ppt, .pptx)",
+      "type": "checkbox"
+    },
+    {
+      "key": "enable_rtf",
+      "name": "Enable RTF files (.rtf)",
+      "type": "checkbox"
+    },
+    {
+      "key": "enable_dicom",
+      "name": "Enable DICOM image files (.dcm)",
+      "type": "checkbox"
+    },
+    {
+      "key": "enable_bmp",
+      "name": "Enable BMP image files (.bmp)",
+      "type": "checkbox"
+    },
+    {
+      "key": "enable_heic",
+      "name": "Enable HEIC image files (.heic)",
+      "type": "checkbox"
+    },
+    {
+      "key": "enable_mp4",
+      "name": "Enable MP4 video files (.mp4)",
+      "type": "checkbox"
+    },
+    {
+      "key": "enable_mp3",
+      "name": "Enable MP3 audio files (.mp3)",
       "type": "checkbox"
     }
   ]

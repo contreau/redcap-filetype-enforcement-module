@@ -41,5 +41,39 @@ const DEFAULT_FILETYPES = [
         "mimetype" => "application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "extensions" => [".xls, .xlsx"]
     ],
-
+    "powerpoint" => [
+        "display_name" => "Powerpoint",
+        "mimetype" => "application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "extensions" => [".ppt, .pptx"]
+    ],
+    "rtf" => [
+        "display_name" => "RTF",
+        "mimetype" => "application/rtf",
+        "extensions" => [".rtf"]
+    ],
+    "dicom" => [
+        "display_name" => "DICOM",
+        "mimetype" => "application/dicom",
+        "extensions" => [".dcm"]
+    ],
+    "bmp" => [
+        "display_name" => "BMP",
+        "mimetype" => "image/bmp",
+        "extensions" => [".bmp"]
+    ],
+    "heic" => [
+        "display_name" => "HEIC",
+        "mimetype" => "image/heic",
+        "extensions" => [".heic"]
+    ],
+    "mp4" => [
+        "display_name" => "MP4",
+        "mimetype" => "video/mp4",
+        "extensions" => [".mp4"]
+    ],
+    "mp3" => [
+        "display_name" => "MP3",
+        "mimetype" => "audio/mpeg",
+        "extensions" => [".mp3"]
+    ],
 ];
