@@ -16,15 +16,46 @@ class FiletypeEnforcementModule extends AbstractExternalModule
 
     public function redcap_every_page_top($project_id)
     {
-        $this->runModuleInInstrumentEditor(); // * Only executes on instrument editor pages of the Online Designer (i.e. where editors are creating / editing fields).
+        $this->runModuleInInstrumentEditor($project_id); // * Only executes on instrument editor pages of the Online Designer (i.e. where editors are creating / editing fields).
         $this->runModuleInInstrumentOptions($project_id); // * Only executes on the default view of the Online Designer, when it reads 'Data Collection Instruments'.
     }
 
     /**
-     * Enables interaction with this module on instrument editor pages.
+     * Resets file field settings to synchronizes with the enabled filetypes when changed in the module settings.
+     * @param string $project_id
      */
-    protected function runModuleInInstrumentEditor(): void
+    protected function synchronizeEnabledFiletypes(string $project_id): void
     {
+        $enabled_filetypes = $this->getEnabledFiletypes($project_id);
+        $enabled_keys = array_column($enabled_filetypes, "display_name"); // or whichever key is most stable
+
+        $last_known = $this->getProjectSetting("last_known_enabled_filetypes", $project_id);
+
+        if ($last_known === null) {
+            $this->setProjectSetting("last_known_enabled_filetypes", $enabled_keys);
+            return;
+        }
+
+        if (array_diff($last_known, $enabled_keys) || array_diff($enabled_keys, $last_known)) {
+            $this->setProjectSetting("last_known_enabled_filetypes", $enabled_keys);
+
+            $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id);
+            if ($filefield_settings !== null) {
+                foreach ($filefield_settings as $instrument => $value) {
+                    $filefield_settings[$instrument] = [];
+                }
+                $this->setProjectSetting("filefield_settings", $filefield_settings);
+            }
+        }
+    }
+
+    /**
+     * Enables interaction with this module on instrument editor pages.
+     * @param string $project_id
+     */
+    protected function runModuleInInstrumentEditor(string $project_id): void
+    {
+        $this->synchronizeEnabledFiletypes($project_id);
         $instrument_names = array_keys(REDCap::getInstrumentNames()); // Gets the instrument names or 'form name', which is used in the query string of the designer page URL (?pid={int}&page=form_name)
 
         // * Since there could be multiple instruments on a project, the module is applied iteratively.
@@ -44,6 +75,7 @@ class FiletypeEnforcementModule extends AbstractExternalModule
      */
     protected function runModuleInInstrumentOptions(string $project_id): void
     {
+        $this->synchronizeEnabledFiletypes($project_id);
         if (
             str_contains($_SERVER["SCRIPT_NAME"], "/Design/online_designer.php") &&
             $_SERVER["QUERY_STRING"] === "pid=$project_id"
@@ -137,12 +169,13 @@ class FiletypeEnforcementModule extends AbstractExternalModule
                 foreach (explode(",", $mimetype_string) as $mime) {
                     if (str_contains($type["mimetype"], trim($mime))) {
                         $extensions = array_merge($extensions, $type["extensions"]);
+                        break;
                     }
                 }
             }
             $result[$field_name] = [
                 "mimetypes" => $mimetype_string,
-                "extensions" => array_unique($extensions)
+                "extensions" => array_values($extensions)
             ];
         }
         return $result;
