@@ -170,6 +170,14 @@ class FiletypeEnforcementModule extends AbstractExternalModule
 
         $result = [];
         foreach ($filefield_settings[$instrument] as $field_name => $mimetype_string) {
+            if (empty($mimetype_string)) {
+                $result[$field_name] = [
+                    "mimetypes" => "",
+                    "extensions" => []
+                ];
+                continue;
+            }
+
             $extensions = [];
             foreach (DEFAULT_FILETYPES as $type) {
                 foreach (explode(",", $mimetype_string) as $mime) {

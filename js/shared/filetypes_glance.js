@@ -30,6 +30,8 @@ export async function observeFieldPreviewRerender(module) {
  */
 export async function displayFiletypesAtGlance(module, filefieldSettings = null) {
   if (!filefieldSettings && module) filefieldSettings = await module.ajax("get_filefield_settings");
+  if (!filefieldSettings) return;
+
   for (const fieldname of Object.keys(filefieldSettings)) {
     createFiletypesLabel(fieldname, filefieldSettings);
   }
@@ -51,6 +53,7 @@ async function displaySingleFieldFiletypes(module, fieldname) {
  * @param {string[]} filefieldSettings
  */
 function createFiletypesLabel(fieldname, filefieldSettings) {
+  if (filefieldSettings[fieldname]["extensions"].length === 0) return; // Cancels if there are no checked filetypes
   const elementTarget = document.querySelector(`div[data-mlm-field="${fieldname}"]`);
   const filetypesLabel = document.createElement("p");
   filetypesLabel.style.fontSize = "13px";
