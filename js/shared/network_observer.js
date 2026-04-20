@@ -21,11 +21,11 @@ export async function observeNetwork(phpFilename, module) {
         performanceObserverIsProcessing = true;
 
         if (phpFilename === "delete_field.php") {
-          const res = await module.ajax("sync_filefield");
-          devConsoleLog(`deleted field. (${res})`);
+          await module.ajax("synchronize");
+          devConsoleLog(`deleted field.`);
         } else if (phpFilename === "delete_form.php") {
-          const res = await module.ajax("sync_instrument");
-          devConsoleLog(`deleted instrument. (${res})`);
+          await module.ajax("synchronize");
+          devConsoleLog(`deleted instrument.`);
         }
 
         performanceObserverIsProcessing = false;

@@ -11,82 +11,19 @@ require_once "default_filetypes.php";
 class FiletypeEnforcementModule extends AbstractExternalModule
 {
     /**
-     * * REDCap HOOKS & ACCOMPANYING FUNCTIONS *
+     * * REDCap HOOKS
      */
 
     public function redcap_every_page_top($project_id)
     {
-        $this->runModuleInInstrumentEditor($project_id); // * Only executes on instrument editor pages of the Online Designer (i.e. where editors are creating / editing fields).
-        $this->runModuleInInstrumentOptions($project_id); // * Only executes on the default view of the Online Designer, when it reads 'Data Collection Instruments'.
+        $in_onlineDesigner = str_contains($_SERVER['SCRIPT_NAME'], "/Design/online_designer.php") &&
+            $_GET["pid"] === $project_id;
+        $in_external_modules_manager = str_contains($_SERVER['SCRIPT_NAME'], "/ExternalModules/manager/project.php") && $_GET['pid'] === $project_id;
+
+        if ($in_onlineDesigner) $this->runModule($project_id);
+        if ($in_external_modules_manager) $this->synchronize($project_id);
     }
 
-    /**
-     * Resets file field settings to synchronizes with the enabled filetypes when changed in the module settings.
-     * @param string $project_id
-     */
-    protected function synchronizeEnabledFiletypes(string $project_id): void
-    {
-        $enabled_filetypes = $this->getEnabledFiletypes($project_id);
-        $enabled_keys = array_column($enabled_filetypes, "display_name"); // or whichever key is most stable
-
-        $last_known = $this->getProjectSetting("last_known_enabled_filetypes", $project_id);
-
-        if ($last_known === null) {
-            $this->setProjectSetting("last_known_enabled_filetypes", $enabled_keys);
-            return;
-        }
-
-        if (array_diff($last_known, $enabled_keys) || array_diff($enabled_keys, $last_known)) {
-            $this->setProjectSetting("last_known_enabled_filetypes", $enabled_keys);
-
-            $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id);
-            if ($filefield_settings !== null) {
-                foreach ($filefield_settings as $instrument => $value) {
-                    $filefield_settings[$instrument] = [];
-                }
-                $this->setProjectSetting("filefield_settings", $filefield_settings);
-            }
-        }
-    }
-
-    /**
-     * Enables interaction with this module on instrument editor pages.
-     * @param string $project_id
-     */
-    protected function runModuleInInstrumentEditor(string $project_id): void
-    {
-        $this->synchronizeEnabledFiletypes($project_id);
-        $instrument_names = array_keys(REDCap::getInstrumentNames()); // Gets the instrument names or 'form name', which is used in the query string of the designer page URL (?pid={int}&page=form_name)
-
-        // * Since there could be multiple instruments on a project, the module is applied iteratively.
-        foreach ($instrument_names as $name) {
-            if ($_GET['page'] == $name && !isset($_GET['s'])) { // the second check here prevents the ensuing code block from running on the live /surveys pages, which have a query parameter of 's'
-                // Set the JS Module Object name as a cookie for the JS script to grab
-                $this->initializeJavascriptModuleObject();
-                setcookie("js_module_object", $this->getJavascriptModuleObjectName());
-                $this->includeJs("js/editor/instrument_editor.js");
-            }
-        }
-    }
-
-    /**
-     * Enables interaction with this module on the base Online Designer page.
-     * @param string $project_id
-     */
-    protected function runModuleInInstrumentOptions(string $project_id): void
-    {
-        $this->synchronizeEnabledFiletypes($project_id);
-        if (
-            str_contains($_SERVER["SCRIPT_NAME"], "/Design/online_designer.php") &&
-            $_SERVER["QUERY_STRING"] === "pid=$project_id"
-        ) {
-            $this->initializeJavascriptModuleObject();
-            setcookie("js_module_object", $this->getJavascriptModuleObjectName());
-            $this->includeJs("js/editor/instrument_options.js");
-        }
-    }
-
-    // * Runs on survey pages after full page render
     public function redcap_survey_page()
     {
         $this->initializeJavascriptModuleObject();
@@ -94,7 +31,6 @@ class FiletypeEnforcementModule extends AbstractExternalModule
         $this->includeJs("js/user/survey_page.js");
     }
 
-    // * Handlers for ajax calls from JS
     public function redcap_module_ajax($action, $payload, $project_id, $record, $instrument)
     {
         switch ($action) {
@@ -111,18 +47,12 @@ class FiletypeEnforcementModule extends AbstractExternalModule
                 $data = json_decode($payload, true);
                 return json_encode($this->setFilefieldSettings($project_id, $instrument, $data));
 
-            case "sync_filefield":
-                return $this->syncFilefield($project_id, $instrument);
-
-            case "sync_instrument":
-                return $this->syncInstrument($project_id);
+            case "synchronize":
+                return $this->synchronize($project_id);
 
             case "update_fieldname":
                 $data = json_decode($payload, true);
                 return json_encode($this->updateFieldname($project_id, $instrument, $data));
-
-            case "update_instrument_name":
-                return $this->updateInstrumentName($project_id);
 
             case "remove_filefield":
                 return $this->removeFilefield($project_id, $instrument, $payload);
@@ -132,6 +62,82 @@ class FiletypeEnforcementModule extends AbstractExternalModule
     /**
      * * MODULE METHODS *
      */
+
+    /**
+     * Performs a full synchronization of the filefield settings against the current state of the project.
+     * Checks for: enabled filetype changes, deleted/renamed instruments, and deleted fields.
+     * @param string $project_id
+     */
+    protected function synchronize(string $project_id): void
+    {
+        $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id);
+        if (!$filefield_settings) return;
+
+        $current_instruments = array_keys(REDCap::getInstrumentNames());
+
+        // Check if enabled filetypes have changed — reset all field settings if so
+        $enabled_filetypes = $this->getEnabledFiletypes($project_id);
+        $enabled_keys = array_column($enabled_filetypes, "display_name");
+        $last_known = $this->getProjectSetting("last_known_enabled_filetypes", $project_id);
+
+        if ($last_known === null) {
+            $this->setProjectSetting("last_known_enabled_filetypes", $enabled_keys);
+        } else if (array_diff($last_known, $enabled_keys) || array_diff($enabled_keys, $last_known)) {
+            $this->setProjectSetting("last_known_enabled_filetypes", $enabled_keys);
+            foreach ($filefield_settings as $instrument => $value) {
+                $filefield_settings[$instrument] = [];
+            }
+            $this->setProjectSetting("filefield_settings", $filefield_settings);
+            return; // no point diffing instruments/fields if we just reset everything
+        }
+
+        // Diff instruments — remove any that no longer exist
+        foreach ($filefield_settings as $instrument_name => $fields) {
+            if (!in_array($instrument_name, $current_instruments)) {
+                unset($filefield_settings[$instrument_name]);
+
+                // Check if this looks like a rename rather than a deletion
+                $new_name = null;
+                foreach ($current_instruments as $name) {
+                    if (!array_key_exists($name, $filefield_settings)) {
+                        $new_name = $name;
+                        break;
+                    }
+                }
+
+                if ($new_name !== null) {
+                    $filefield_settings[$new_name] = $fields;
+                }
+                continue;
+            }
+
+            // Diff fields within each instrument — remove any that no longer exist
+            $current_fields = REDCap::getFieldNames([$instrument_name]);
+            if ($current_fields) {
+                foreach ($fields as $field_name => $value) {
+                    if (!in_array($field_name, $current_fields)) {
+                        unset($filefield_settings[$instrument_name][$field_name]);
+                    }
+                }
+            }
+        }
+
+        $this->setProjectSetting("filefield_settings", $filefield_settings);
+    }
+
+    protected function runModule(string $project_id): void
+    {
+        $this->synchronize($project_id);
+        $is_instrument_page = in_array($_GET['page'], array_keys(REDCap::getInstrumentNames()));
+        $this->initializeJavascriptModuleObject();
+        setcookie("js_module_object", $this->getJavascriptModuleObjectName());
+
+        if ($is_instrument_page) {
+            $this->includeJs("js/editor/instrument_editor.js");
+        } else {
+            $this->includeJs("js/editor/instrument_options.js");
+        }
+    }
 
     /**
      * Fetches the file types that have been enabled from the module settings.
@@ -194,6 +200,10 @@ class FiletypeEnforcementModule extends AbstractExternalModule
         $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id);
         $field_name = $payload;
 
+        if (!$filefield_settings || !isset($filefield_settings[$instrument]) || empty($filefield_settings[$instrument])) {
+            return null;
+        }
+
         if (array_key_exists($field_name, $filefield_settings[$instrument]) && $filefield_settings[$instrument][$field_name] !== '') {
             $mimetypes = explode(",", $filefield_settings[$instrument][$field_name]);
             $file_ids = [];
@@ -207,56 +217,6 @@ class FiletypeEnforcementModule extends AbstractExternalModule
             return $file_ids;
         }
         return null;
-    }
-
-    /**
-     * Synchronizes data at the file field key level between the file field settings and the UI.
-     * @param string $project_id
-     * @param string $instrument
-     */
-    protected function syncFilefield(string $project_id, string $instrument): string
-    {
-        $current_fields = REDCap::getFieldNames([$instrument]);
-        if ($current_fields == false) {
-            // When the last field of an instrument is deleted from the editor and REDCap auto-deletes the instrument, this will just remove the instrument from the file field settings.
-            return $this->syncInstrument($project_id);
-        }
-
-        $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id);
-        $instrument_settings = $filefield_settings[$instrument];
-        $deleted_field = "";
-
-        foreach ($instrument_settings as $key => $value) {
-            if (!in_array($key, $current_fields)) {
-                unset($instrument_settings[$key]);
-                $deleted_field = $key;
-            }
-        }
-
-        $filefield_settings[$instrument] = $instrument_settings;
-        $this->setProjectSetting("filefield_settings", $filefield_settings);
-        return $deleted_field;
-    }
-
-    /**
-     * Synchronizes data at the instrument key level between the file field settings and the UI.
-     * @param string $project_id
-     */
-    protected function syncInstrument(string $project_id): string
-    {
-        $current_instruments = array_keys(REDCap::getInstrumentNames());
-        $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id);
-        $deleted_instrument = "";
-
-        foreach ($filefield_settings as $instrument_name => $data) {
-            if (!in_array($instrument_name, $current_instruments)) {
-                unset($filefield_settings[$instrument_name]);
-                $deleted_instrument = $instrument_name;
-            }
-        }
-
-        $this->setProjectSetting("filefield_settings", $filefield_settings);
-        return $deleted_instrument;
     }
 
     /**
@@ -300,46 +260,6 @@ class FiletypeEnforcementModule extends AbstractExternalModule
     }
 
     /**
-     * Runs when either the instrument list or editor pages load, checking via diff that the instrument names are in sync between the file field settings and the base application.
-     * @param string $project_id
-     */
-    protected function updateInstrumentName(string $project_id): string
-    {
-        $current_instruments = array_keys(REDCap::getInstrumentNames());
-        $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id);
-        $deprecated_instrument_name = "";
-        $new_instrument_name = "";
-        $data = null;
-
-        // Find the deprecated key (in settings but not in current instruments)
-        foreach ($filefield_settings as $instrument_name => $value) {
-            if (!in_array($instrument_name, $current_instruments)) {
-                $deprecated_instrument_name = $instrument_name;
-                $data = $value;
-                unset($filefield_settings[$instrument_name]);
-                break;
-            }
-        }
-
-        // Find the new key (in current instruments but not in settings)
-        foreach ($current_instruments as $name) {
-            if (!array_key_exists($name, $filefield_settings)) {
-                $new_instrument_name = $name;
-                break;
-            }
-        }
-
-        if ($deprecated_instrument_name !== "" && $new_instrument_name !== "") {
-            $filefield_settings[$new_instrument_name] = $data ?? [];
-            $this->setProjectSetting("filefield_settings", $filefield_settings);
-            return "updated instrument name: $deprecated_instrument_name -> $new_instrument_name";
-        }
-
-        return "no rename detected";
-    }
-
-
-    /**
      * Saves the enforced filetypes in the project settings as configured in the UI.
      * @param string $project_id
      * @param string $instrument
@@ -375,7 +295,7 @@ class FiletypeEnforcementModule extends AbstractExternalModule
     {
         $filefield_settings = $this->getProjectSetting("filefield_settings", $project_id);
         if (!isset($filefield_settings[$instrument][$field_name])) {
-            return "field not found: $field_name";
+            return "Field not found: $field_name";
         }
         unset($filefield_settings[$instrument][$field_name]);
         $this->setProjectSetting("filefield_settings", $filefield_settings);

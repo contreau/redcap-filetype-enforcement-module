@@ -1,5 +1,7 @@
 <?php
 
+namespace ExternalModules\FiletypeEnforcementModule;
+
 const DEFAULT_FILETYPES = [
     "pdf" => [
         "display_name" => "PDF",
