@@ -1,4 +1,6 @@
-export class FiletypeCheckboxesComponent extends HTMLElement {
+import { devConsoleLog } from "./utils.js";
+
+export class FiletypeCheckboxes extends HTMLElement {
   static tagName = "filetype-checkboxes";
 
   constructor(module, fieldname) {
@@ -11,7 +13,7 @@ export class FiletypeCheckboxesComponent extends HTMLElement {
   #enabledFiletypes;
 
   async connectedCallback() {
-    console.log(`connected (${this.fieldname})`);
+    devConsoleLog(`connected (${this.fieldname})`);
     const shadow = this.shadowRoot ?? this.attachShadow({ mode: "open" });
 
     this.preexistingFieldname = "";
@@ -68,7 +70,7 @@ export class FiletypeCheckboxesComponent extends HTMLElement {
   }
 
   disconnectedCallback() {
-    console.log(`disconnected (${this.fieldname})`);
+    devConsoleLog(`disconnected (${this.fieldname})`);
   }
 
   setFieldname(fieldname) {
@@ -147,7 +149,7 @@ export class FiletypeCheckboxesComponent extends HTMLElement {
       deprecated_field_name: this.preexistingFieldname,
       enforced_filetypes: checkedFiletypes,
     };
-    console.log(`updating field name: ${this.preexistingFieldname} -> ${this.fieldname}`);
+    devConsoleLog(`updating field name: ${this.preexistingFieldname} -> ${this.fieldname}`);
     const response = await module.ajax("update_fieldname", JSON.stringify(payload));
     return response;
   }

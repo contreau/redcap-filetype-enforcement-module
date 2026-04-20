@@ -1,6 +1,8 @@
+import { devConsoleLog } from "./utils.js";
+
 /**
  * Creates the mutation observer for the field editor dialog in the instrument builder page.
- * @param {HTMLElement} component FiletypeCheckboxesComponent
+ * @param {HTMLElement} component FiletypeCheckboxes
  * @param {*} module JS Module Object
  */
 export function observeFieldEditorDialog(component, module) {
@@ -48,11 +50,12 @@ export function observeFieldEditorDialog(component, module) {
 
     if (!filetypeCheckboxes && fieldname !== "") {
       const res = await module.ajax("remove_filefield", fieldname);
-      console.log(`removed file field from settings. (${res})`);
+
+      devConsoleLog(`removed file field from settings. (${res})`);
     } else if (filetypeCheckboxes && fieldnameInputValue !== "") {
       filetypeCheckboxes.setFieldname(fieldnameInputValue);
       const savedData = await filetypeCheckboxes.saveEnforcedFiletypes(fieldnameInputValue);
-      console.log("saved. ", JSON.parse(savedData));
+      devConsoleLog("saved. ", JSON.parse(savedData));
     }
 
     // Reset Dialog

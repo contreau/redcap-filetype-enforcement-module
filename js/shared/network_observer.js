@@ -1,3 +1,5 @@
+import { devConsoleLog } from "./utils.js";
+
 /**
  * Network Observer for handling field and instrument deletion.
  * @param {string} phpFilename Target PHP file to observe
@@ -20,10 +22,10 @@ export async function observeNetwork(phpFilename, module) {
 
         if (phpFilename === "delete_field.php") {
           const res = await module.ajax("sync_filefield");
-          console.log(`deleted field. (${res})`);
+          devConsoleLog(`deleted field. (${res})`);
         } else if (phpFilename === "delete_form.php") {
           const res = await module.ajax("sync_instrument");
-          console.log(`deleted instrument. (${res})`);
+          devConsoleLog(`deleted instrument. (${res})`);
         }
 
         performanceObserverIsProcessing = false;

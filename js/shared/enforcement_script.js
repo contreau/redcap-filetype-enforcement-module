@@ -44,7 +44,7 @@ export function applyFiletypeEnforcement(settings) {
 
           // Set id and inner HTML
           rejectionMessageElement.id = "file-rejection-message";
-          rejectionMessageElement.innerHTML = `<i class='fas fa-triangle-exclamation'></i>Unsupported file type.<br/>Valid file extensions: ${extensions.join(", ")}`;
+          rejectionMessageElement.innerHTML = `<i class='fas fa-triangle-exclamation'></i>Unacceptable file type for this upload.`;
 
           // Set styles
           rejectionMessageElement.style.fontWeight = "bold";
