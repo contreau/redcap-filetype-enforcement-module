@@ -50,18 +50,22 @@ export function observeFieldEditorDialog(component, module) {
 
     if (!filetypeCheckboxes && fieldname !== "") {
       const res = await module.ajax("remove_filefield", fieldname);
-
       devConsoleLog(`removed file field from settings. (${res})`);
+
+      // Reset Dialog
+      dialogIsOpen = false;
+      fieldname = "";
+      unmountComponent();
     } else if (filetypeCheckboxes && fieldnameInputValue !== "") {
       filetypeCheckboxes.setFieldname(fieldnameInputValue);
       const savedData = await filetypeCheckboxes.saveEnforcedFiletypes(fieldnameInputValue);
       devConsoleLog("saved. ", JSON.parse(savedData));
-    }
 
-    // Reset Dialog
-    dialogIsOpen = false;
-    fieldname = "";
-    unmountComponent();
+      // Reset Dialog
+      dialogIsOpen = false;
+      fieldname = "";
+      unmountComponent();
+    }
   };
 
   // Observe body for the field editor dialog to appear
