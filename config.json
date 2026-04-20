@@ -15,17 +15,15 @@
     "get_enforced_filetypes",
     "get_filefield_settings",
     "set_filefield_settings",
-    "sync_filefield",
-    "sync_instrument",
+    "synchronize",
     "update_fieldname",
-    "update_instrument_name",
     "remove_filefield"
   ],
   "no-auth-ajax-actions": ["get_filefield_settings"],
   "project-settings": [
     {
       "key": "settings_description",
-      "name": "<strong>INSTRUCTIONS:</strong> Check each file type that you would like to make available for your file upload fields. You can then choose among these in the instrument builder.<br/><br/><strong>IMPORTANT:</strong> If you have the Online Designer open while changing this configuration, you must refresh that page before continuing your instrument design.",
+      "name": "<strong>USAGE:</strong><br/><br/><ul><li>Check each file type that you would like to make available for your file upload fields. You can then choose among these to enforce when editing file upload fields in the Online Designer.</li></ul><strong>PLEASE NOTE:</strong><br/><br/><ul><li>Updating this configuration will remove all previously saved file type settings from your file upload fields in this project, since previously enabled types may no longer be available.</li><li>If you have the Online Designer open while changing this configuration, you must refresh that page before continuing your instrument design.</li></ul>",
       "type": "descriptive"
     },
     {
