@@ -1,6 +1,12 @@
 <?php
 
-namespace ExternalModules\FiletypeEnforcementModule;
+/**
+ * REDCap External Module: File Upload Field Type Enforcement
+ * Easily configure strict filetypes for file upload fields, directly from the Online Designer's field editor modal.
+ * @author Conor Kelley, The George Washington University Academic Medical Enterprise
+ */
+
+namespace GWU\FiletypeEnforcementModule;
 
 use ExternalModules\AbstractExternalModule;
 use ExternalModules\ExternalModules;

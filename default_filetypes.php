@@ -1,6 +1,6 @@
 <?php
 
-namespace ExternalModules\FiletypeEnforcementModule;
+namespace GWU\FiletypeEnforcementModule;
 
 const DEFAULT_FILETYPES = [
     "pdf" => [
