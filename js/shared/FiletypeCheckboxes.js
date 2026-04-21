@@ -31,7 +31,7 @@ export class FiletypeCheckboxes extends HTMLElement {
       wc.innerHTML = `
       <div id="filetype-checkboxes-wrapper">
         <strong>Filetypes</strong>
-        <div id="filetype-checkboxes-explanation">Select all filetypes to be enforced for this upload.</div>
+        <div id="filetype-checkboxes-explanation">${checkboxes === "" ? "Enable filetypes in the external module settings to see them here." : "Select all filetypes to be enforced for this upload."}</div>
         <div id="filetype-checkboxes">${checkboxes}</div>
       </div>
 
