@@ -11,7 +11,7 @@ Allows survey/form builders to configure strict acceptable file (MIME) types for
 1. Enable the module for your project from the External Modules page.
 2. Navigate to the module's project settings and check each file type you want to make available for enforcement. Only enabled file types will appear as options in the field editor modal.
 
-!(Module configuration settings)[img/module-config.jpg]
+![Module configuration settings](img/module-config.jpg)
 
 ## Usage
 
@@ -24,17 +24,17 @@ Allows survey/form builders to configure strict acceptable file (MIME) types for
 
 #### Example of a Field Editor Modal with Selectable File Types
 
-!(Field editor modal showing selectable file types)[img/field-editor-modal.jpg]
+![Field editor modal showing selectable file types](img/field-editor-modal.jpg)
 
 #### Preview of a File Upload Field with Applied File Types
 
-!(A preview of a file field in the editor after applying strict file types)[img/file-field-preview.jpg]
+![A preview of a file field in the editor after applying strict file types](img/file-field-preview.jpg)
 
 ### On Survey Pages
 
 When an end user attempts to upload a file on a live survey page, the module checks the file type against the configured MIME type(s) for that field. If not allowed, the file is rejected and a message is displayed prompting the end user to upload a supported file type.
 
-!()[img/error-message-ui.jpg]
+![An end user's view of a file upload field displaying an invalid file error message](img/error-message-ui.jpg)
 
 ## Supported File Types
 
