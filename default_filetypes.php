@@ -44,7 +44,7 @@ const DEFAULT_FILETYPES = [
         "extensions" => [".xls, .xlsx"]
     ],
     "powerpoint" => [
-        "display_name" => "Powerpoint",
+        "display_name" => "PowerPoint",
         "mimetype" => "application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation",
         "extensions" => [".ppt, .pptx"]
     ],
