@@ -54,7 +54,10 @@ async function displaySingleFieldFiletypes(module, fieldname) {
  */
 function createFiletypesLabel(fieldname, filefieldSettings) {
   if (filefieldSettings[fieldname]["extensions"].length === 0) return; // Cancels if there are no checked filetypes
-  const elementTarget = document.querySelector(`div[data-mlm-field="${fieldname}"]`);
+  const elementTarget = document.querySelector(
+    `div[data-mlm-field="${fieldname}"][data-mlm-type="label"]`,
+  );
+  if (!elementTarget) return; // Cancels if the fieldname's corresponding element is not found in the page
   const filetypesLabel = document.createElement("p");
   filetypesLabel.style.fontSize = "13px";
   filetypesLabel.style.fontWeight = "500";
