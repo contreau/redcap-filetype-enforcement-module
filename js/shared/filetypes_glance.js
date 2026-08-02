@@ -33,7 +33,7 @@ export async function displayFiletypesAtGlance(module, filefieldSettings = null)
   if (!filefieldSettings) return;
 
   for (const fieldname of Object.keys(filefieldSettings)) {
-    createFiletypesLabel(fieldname, filefieldSettings);
+    applyFiletypesLabel(fieldname, filefieldSettings);
   }
 }
 
@@ -44,24 +44,38 @@ export async function displayFiletypesAtGlance(module, filefieldSettings = null)
  */
 async function displaySingleFieldFiletypes(module, fieldname) {
   const filefieldSettings = await module.ajax("get_filefield_settings");
-  createFiletypesLabel(fieldname, filefieldSettings);
+  applyFiletypesLabel(fieldname, filefieldSettings);
 }
 
 /**
- * Helper for generating the at-a-glance file types label.
+ * Helper for applying the at-a-glance file types label.
  * @param {string} fieldname
  * @param {string[]} filefieldSettings
  */
-function createFiletypesLabel(fieldname, filefieldSettings) {
+function applyFiletypesLabel(fieldname, filefieldSettings) {
+  /**
+   * Dynamically creates and appends the filetypes label <p>, when called
+   * @param {HTMLSpanElement | HTMLDivElement} target
+   * @param {string} fieldname
+   * @param {string[]} filefieldSettings
+   */
+  const buildAndAppendLabel = (target, fieldname, filefieldSettings) => {
+    const filetypesLabel = document.createElement("p");
+    filetypesLabel.style.fontSize = "13px";
+    filetypesLabel.style.fontWeight = "500";
+    filetypesLabel.style.color = "#515151";
+    filetypesLabel.innerHTML = `Accepted: <strong>${filefieldSettings[fieldname]["extensions"].join(", ")}</strong>`;
+    target.after(filetypesLabel);
+  };
+
   if (filefieldSettings[fieldname]["extensions"].length === 0) return; // Cancels if there are no checked filetypes
+
+  const embeddedElementTarget = document.querySelector(`span.rc-field-embed[var="${fieldname}"]`); // Embedded field target
   const elementTarget = document.querySelector(
-    `div[data-mlm-field="${fieldname}"][data-mlm-type="label"]`,
+    `div[data-mlm-field="${fieldname}"][data-mlm-type="label"]`, // Field target
   );
-  if (!elementTarget) return; // Cancels if the fieldname's corresponding element is not found in the page
-  const filetypesLabel = document.createElement("p");
-  filetypesLabel.style.fontSize = "13px";
-  filetypesLabel.style.fontWeight = "500";
-  filetypesLabel.style.color = "#515151";
-  filetypesLabel.innerHTML = `Accepted: <strong>${filefieldSettings[fieldname]["extensions"].join(", ")}</strong>`;
-  elementTarget.after(filetypesLabel);
+  if (!elementTarget && !embeddedElementTarget) return; // Cancels if the fieldname's corresponding element is not found in the page
+  if (elementTarget) buildAndAppendLabel(elementTarget, fieldname, filefieldSettings);
+  if (embeddedElementTarget)
+    buildAndAppendLabel(embeddedElementTarget, fieldname, filefieldSettings);
 }

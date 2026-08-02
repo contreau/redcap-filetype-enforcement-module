@@ -10,7 +10,7 @@ export function applyFiletypeEnforcement(settings) {
    */
   function setInputAcceptAttribute(mimetypeString, extensions) {
     const fileUploadInput = /** @type {HTMLInputElement} */ (
-      document.querySelector("form#form_file_upload div#f1_upload_form div input")
+      document.querySelector("form#form_file_upload div#f1_upload_form div input[type='file']")
     );
     if (fileUploadInput.getAttribute("accept") === null) {
       fileUploadInput.setAttribute("accept", mimetypeString);
@@ -70,9 +70,9 @@ export function applyFiletypeEnforcement(settings) {
    * @param {string} mimetypeString
    * @param {string[]} extensions
    */
-  function registerFileValidation(fieldname, fieldNode, mimetypeString, extensions) {
+  function registerFileValidation(fieldname, mimetypeString, extensions) {
     // - Case 1: Initial click event assignment
-    const uploadButton = fieldNode.querySelector(`a.fileuploadlink`);
+    const uploadButton = document.querySelector(`#${fieldname}-linknew > a.fileuploadlink`);
     uploadButton?.addEventListener("click", () => {
       if (mimetypeString !== "") setInputAcceptAttribute(mimetypeString, extensions);
     });
@@ -85,7 +85,7 @@ export function applyFiletypeEnforcement(settings) {
       for (const mutation of mutationList) {
         if (mutation.type === "childList") {
           if (!addedListener) {
-            const uploadButton = fieldNode.querySelector(`a.fileuploadlink`);
+            const uploadButton = document.querySelector(`#${fieldname}-linknew > a.fileuploadlink`);
             uploadButton?.addEventListener("click", () => {
               if (mimetypeString !== "") setInputAcceptAttribute(mimetypeString, extensions);
             });
@@ -96,7 +96,7 @@ export function applyFiletypeEnforcement(settings) {
     });
 
     const parentContainerOfUploadButton = /** @type {Element} */ (
-      fieldNode.querySelector(`#${fieldname}-linknew`)
+      document.querySelector(`#${fieldname}-linknew`)
     );
     observer.observe(parentContainerOfUploadButton, { childList: true });
   }
@@ -107,6 +107,6 @@ export function applyFiletypeEnforcement(settings) {
     const fieldNode = document.querySelector(`tr[sq_id="${fieldname}"]`);
     if (!fieldNode) continue;
     const { mimetypes, extensions } = settings[fieldname];
-    registerFileValidation(fieldname, fieldNode, mimetypes, extensions);
+    registerFileValidation(fieldname, mimetypes, extensions);
   }
 }
